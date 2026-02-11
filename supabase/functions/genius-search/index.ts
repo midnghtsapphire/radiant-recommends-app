@@ -69,11 +69,15 @@ Deno.serve(async (req) => {
     } else {
       const lovableKey = Deno.env.get("LOVABLE_API_KEY");
       if (!lovableKey) throw new Error("LOVABLE_API_KEY not configured");
+
+      // Kimo, Dolphin, Mistral, Venice route through Lovable AI gateway (same endpoint)
+      const selectedModel = body.model || "google/gemini-3-flash-preview";
+
       const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: body.model || "google/gemini-3-flash-preview",
+          model: selectedModel,
           messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
         }),
       });

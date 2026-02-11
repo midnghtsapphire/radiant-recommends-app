@@ -156,6 +156,10 @@ const PRESET_TOOLS = [
   { name: "UpClaw", desc: "AI Agent Creator — Digital Ocean wrapper, deploy agents as websites/APIs in one click", category: "agent", cost: 3 },
   { name: "UpClawSaaS", desc: "Multi-tenant SaaS agent platform — white-label, billing, user management, marketplace", category: "agent", cost: 3 },
   { name: "UpConnect", desc: "Universal API aggregator — one login for all APIs (Stripe, Google, OpenRouter), SaaS connector hub", category: "agent", cost: 3 },
+  // ─── Deployment & App Stores ───
+  { name: "UpApple", desc: "iOS App Store deployment — Capacitor build, Xcode config, provisioning profiles, App Store Connect, TestFlight", category: "deploy", cost: 3 },
+  { name: "UpAPK", desc: "Android APK/AAB deployment — Capacitor build, Android Studio, Play Console, signing keys, store listing", category: "deploy", cost: 3 },
+  { name: "UpEXE", desc: "Desktop & web deployment — Electron/Tauri exe, PWA setup, service workers, installable web app", category: "deploy", cost: 3 },
   // ─── Meta / Orchestration ───
   { name: "UpImplement", desc: "Auto-implement generated tool from repository — deploy edge function, create DB tables, wire UI", category: "meta", cost: 3 },
   { name: "UpRun", desc: "Run an implemented tool end-to-end with unit test validation — verify it works in production", category: "meta", cost: 2 },
@@ -163,7 +167,7 @@ const PRESET_TOOLS = [
   { name: "UpEndToEndTesting", desc: "Generate & run comprehensive E2E test suites — user flows, edge cases, regression, Playwright scripts", category: "meta", cost: 3 },
   { name: "UpSOXCompliance", desc: "SOX compliance audit — access controls, audit trails, data integrity, change management, reporting", category: "meta", cost: 3 },
   { name: "UpAutoEvent", desc: "Auto-create ALL tools needed for any event/project — researches market, suggests novel tools, generates everything", category: "meta", cost: 3 },
-  { name: "UpRetry", desc: "Auto-retry failed/raw tools — cycles OpenRouter 3x then Gemini fallback, bulk retry_all for batch recovery", category: "meta", cost: 1 },
+  { name: "UpRetry", desc: "Auto-retry failed/raw tools — cycles paid models 3x then Gemini fallback, bulk retry_all for batch recovery", category: "meta", cost: 1 },
   { name: "UpSell", desc: "Instant revenue — fastest path to $100/day via affiliate, dropship, digital products, consulting", category: "fastmoney", cost: 2 },
 ];
 
@@ -193,6 +197,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   consolidated: "🔥 Consolidated Power Tools",
   organizer: "📂 Email & Drive Organizer",
   agent: "🤖 Agents & Connections",
+  deploy: "📲 Deployment & App Stores",
   meta: "⚡ Orchestration & Meta-Tools",
 };
 
