@@ -178,22 +178,28 @@ Return JSON:
       const eventName = body.event_name || "haircare-app";
       const eventType = body.event_type || "project";
 
-      // Step 1: Get tool suggestions — research-driven
-      const suggestPrompt = `You are a visionary architect. For a "${eventType}" called "${eventName}", research what exists and suggest the COMPLETE tool suite needed. 
+      // Step 1: Get tool suggestions — research-driven with naming convention analysis
+      const suggestPrompt = `You are a visionary architect and naming strategist. For a "${eventType}" called "${eventName}", do the following:
 
-Research existing apps/APIs in this space. Identify weaknesses. Design tools that are BETTER than anything on the market.
+1. RESEARCH: What existing apps, APIs, open-source projects exist in this space? What are their weaknesses?
+2. NAMING CONVENTION: Propose a systematic naming convention for all tools. Our current prefix is "Up" (e.g., UpQA, UpSEO). Evaluate if this is optimal or suggest improvements. Consider: UpGuard (security), UpScan (detection), UpShield (protection), UpProbe (testing), etc.
+3. DEEPFAKE & SECURITY: Include specialized tools for deepfake detection, deepfake testing, AI content verification, prompt injection detection, and trust scoring. Name them systematically.
+4. TOOL SUITE: Design the COMPLETE tool suite needed, tailored for "${eventType}":
 
-For "${eventType}" type, include ONLY relevant tools from:
-- ${eventType === "website" || eventType === "saas" ? "Business: UpDomain, UpSEO, UpSubscription, UpPayments, UpBusinessLicense, UpCertificates, UpSOS, UpEIN, UpInsurance" : ""}
-- ${eventType === "campaign" ? "Marketing: UpSocialMedia, UpAffiliate, UpContent, UpYouTube, UpBlueOcean, UpChatter, UpBackLinking, UpLongTail" : ""}
+Categories to include:
+- Business Formation: UpDomain, UpSEO, UpSubscription, UpPayments, UpBusinessLicense, UpCertificates, UpSOS, UpEIN, UpInsurance
+- Marketing: UpSocialMedia, UpAffiliate, UpContent, UpYouTube, UpBlueOcean, UpChatter, UpBackLinking, UpLongTail
 - App Assembly: UpApp (final assembly), UpImplement, UpRun
-- QA: UpQA, UpTest, UpCodeReview, UpEndToEnd
-- Security: UpSOXCompliance, UpAutoDetectionPromptInjections
-- Docs: UpDataDictionary, UpAPIDoc, UpUserManual
-- Brand: UpLogo, UpFavCon, UpAltText
-- Also suggest 2-3 NOVEL tools specific to "${eventName}" that would give it an unfair advantage.
+- QA & Testing: UpQA, UpTest, UpCodeReview, UpEndToEnd, UpEndToEndTesting, UpRegression, UpLoadTest
+- Security & Trust: UpDeepFakeDetect, UpDeepFakeTest, UpDeepFakeProof, UpContentVerify, UpTrustScore, UpSOXCompliance, UpPromptGuard, UpAutoDetectionPromptInjections
+- Documentation: UpDataDictionary, UpAPIDoc, UpUserManual, UpTechManual
+- Branding: UpLogo, UpFavCon, UpAltText, UpBrandKit
+- Voice & Media: UpVoice, UpTTS, UpPodcast
+- Intelligence: UpAgent, UpPatent, UpCompetitorIntel, UpDataScientist
 
-Return JSON array of objects: [{"name": "UpToolName", "description": "what it does", "order": 1}]. Order by implementation sequence. Max 20 tools.`;
+5. NOVEL IDEAS: Suggest 3-5 renaissance-level tools that DON'T EXIST anywhere — ideas from Tesla, Da Vinci, Turing applied to modern SaaS.
+
+Return JSON array: [{"name": "UpToolName", "description": "what it does and why it's better than anything on market", "category": "string", "order": 1}]. Order by implementation sequence. Max 25 tools. Include ALL deepfake/security tools.`;
       const suggestRaw = await callOpenRouter(suggestPrompt, OPENROUTER_MODELS[1]);
       const suggestedTools = parseJSON(suggestRaw);
 

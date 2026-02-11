@@ -44,8 +44,16 @@ const PRESET_TOOLS = [
   { name: "UpCodeReview", desc: "Automated code review MCP, security scanning, best practices enforcement", category: "quality", cost: 2 },
   { name: "UpEndToEnd", desc: "Full E2E test suite generation — user flows, edge cases, Playwright/Cypress scripts", category: "quality", cost: 3 },
   { name: "UpTracing", desc: "Performance tracing, error monitoring, bottleneck detection, observability dashboards", category: "quality", cost: 2 },
-  { name: "UpDeepFakeDetection", desc: "Detect AI-generated images/video/audio, verify content authenticity, trust scoring", category: "quality", cost: 3 },
-  { name: "UpAutoDetectionPromptInjections", desc: "Detect & block prompt injection attacks, sanitize LLM inputs, security guardrails", category: "quality", cost: 3 },
+  { name: "UpRegression", desc: "Regression test suite — detects breaking changes, before/after comparison, auto-rollback triggers", category: "quality", cost: 2 },
+  { name: "UpLoadTest", desc: "Load & stress testing — concurrent users, throughput limits, latency benchmarks, bottleneck reports", category: "quality", cost: 2 },
+  // ─── Deepfake & Trust ───
+  { name: "UpDeepFakeDetect", desc: "Detect AI-generated images/video/audio using multi-model analysis, confidence scoring, forensic metadata", category: "deepfake", cost: 3 },
+  { name: "UpDeepFakeTest", desc: "Generate test deepfakes to validate detection systems — adversarial testing, edge cases, benchmark suite", category: "deepfake", cost: 3 },
+  { name: "UpDeepFakeProof", desc: "Watermark & certify authentic content — blockchain hash, provenance chain, tamper-proof certificates", category: "deepfake", cost: 3 },
+  { name: "UpContentVerify", desc: "Verify content authenticity — reverse image search, metadata analysis, source tracking, plagiarism check", category: "deepfake", cost: 2 },
+  { name: "UpTrustScore", desc: "Trust scoring engine — rate content/users/sources on authenticity, reliability, and reputation metrics", category: "deepfake", cost: 2 },
+  { name: "UpPromptGuard", desc: "Detect & block prompt injection attacks, sanitize LLM inputs, jailbreak prevention, security guardrails", category: "deepfake", cost: 3 },
+  { name: "UpAutoDetectionPromptInjections", desc: "Advanced multi-layer prompt injection detection — pattern matching, semantic analysis, canary tokens", category: "deepfake", cost: 3 },
   // ─── Branding & Business ───
   { name: "UpAltText", desc: "Auto-generate SEO-optimized alt text for all images, accessibility compliance", category: "brand", cost: 1 },
   { name: "UpFavCon", desc: "Generate favicons, app icons, PWA icons in all required sizes from a single design", category: "brand", cost: 1 },
@@ -117,7 +125,8 @@ const HAIR_CATEGORIES = [
 
 const CATEGORY_LABELS: Record<string, string> = {
   revenue: "💰 Marketing & Revenue",
-  quality: "🛡️ Quality & Security",
+  quality: "🛡️ Quality & Testing",
+  deepfake: "🔍 Deepfake & Trust",
   brand: "🎨 Branding & Business",
   app: "📱 App Creation & Payments",
   intel: "🧠 Intelligence",
