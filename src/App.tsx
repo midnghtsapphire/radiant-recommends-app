@@ -3,11 +3,14 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/hooks/useAuth";
 import Layout from "./components/Layout";
 import Index from "./pages/Index";
 import Analyzer from "./pages/Analyzer";
 import Recommendations from "./pages/Recommendations";
 import Marketing from "./pages/Marketing";
+import Auth from "./pages/Auth";
+import SavedAnalyses from "./pages/SavedAnalyses";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -18,15 +21,19 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/analyzer" element={<Analyzer />} />
-            <Route path="/recommendations" element={<Recommendations />} />
-            <Route path="/marketing" element={<Marketing />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Layout>
+        <AuthProvider>
+          <Layout>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/analyzer" element={<Analyzer />} />
+              <Route path="/recommendations" element={<Recommendations />} />
+              <Route path="/marketing" element={<Marketing />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/saved" element={<SavedAnalyses />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Layout>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
