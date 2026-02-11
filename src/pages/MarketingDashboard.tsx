@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { 
   BarChart3, Plus, Play, Pause, CheckCircle, Trash2, 
   MapPin, DollarSign, TrendingUp, Instagram, Twitter, 
-  Facebook, Clock, ArrowUpDown
+  Facebook, Clock, ArrowUpDown, FlaskConical, Loader2,
+  CheckCircle2, XCircle
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -232,6 +233,7 @@ export default function MarketingDashboard() {
             <TabsTrigger value="posts">Campaign Posts</TabsTrigger>
             <TabsTrigger value="expenses">Expenses</TabsTrigger>
             <TabsTrigger value="stats">Performance</TabsTrigger>
+            <TabsTrigger value="tests" className="gap-1.5"><FlaskConical className="h-3.5 w-3.5" />Test Suite</TabsTrigger>
           </TabsList>
 
           {/* QUEUE TAB */}
@@ -539,8 +541,223 @@ export default function MarketingDashboard() {
               </div>
             </div>
           </TabsContent>
+          {/* TEST SUITE TAB */}
+          <TabsContent value="tests">
+            <DashboardTestSuite userId={user?.id ?? null} onRefresh={() => { fetchProducts(); fetchPosts(); fetchExpenses(); }} />
+          </TabsContent>
         </Tabs>
       </motion.div>
+    </div>
+  );
+}
+
+/* ─── Dashboard Test Suite Component ─── */
+interface TestResult {
+  name: string;
+  status: "pass" | "fail" | "running" | "pending";
+  detail?: string;
+  durationMs?: number;
+}
+
+function DashboardTestSuite({ userId, onRefresh }: { userId: string | null; onRefresh: () => void }) {
+  const [results, setResults] = useState<TestResult[]>([]);
+  const [running, setRunning] = useState(false);
+
+  const updateResult = (idx: number, patch: Partial<TestResult>) =>
+    setResults(prev => prev.map((r, i) => (i === idx ? { ...r, ...patch } : r)));
+
+  const runAll = useCallback(async () => {
+    if (!userId || running) return;
+    setRunning(true);
+
+    const tests: TestResult[] = [
+      { name: "Insert marketing product", status: "pending" },
+      { name: "Read marketing products", status: "pending" },
+      { name: "Update product status", status: "pending" },
+      { name: "Insert campaign post", status: "pending" },
+      { name: "Read campaign posts", status: "pending" },
+      { name: "Insert expense", status: "pending" },
+      { name: "Read expenses", status: "pending" },
+      { name: "Delete expense", status: "pending" },
+      { name: "Delete campaign post", status: "pending" },
+      { name: "Delete marketing product", status: "pending" },
+    ];
+    setResults([...tests]);
+
+    let productId = "";
+    let postId = "";
+    let expenseId = "";
+
+    // 1 — Insert product
+    const run = async (idx: number, fn: () => Promise<string>) => {
+      setResults(prev => prev.map((r, i) => (i === idx ? { ...r, status: "running" } : r)));
+      const start = performance.now();
+      try {
+        const detail = await fn();
+        updateResult(idx, { status: "pass", detail, durationMs: Math.round(performance.now() - start) });
+      } catch (e: any) {
+        updateResult(idx, { status: "fail", detail: e.message ?? String(e), durationMs: Math.round(performance.now() - start) });
+      }
+    };
+
+    await run(0, async () => {
+      const { data, error } = await supabase.from("marketing_products").insert({
+        user_id: userId,
+        product_name: `__test_product_${Date.now()}`,
+        product_type: "hair_care",
+        description: "Automated test product",
+        score: 88,
+        target_state: "California",
+        target_county: "Los Angeles",
+      }).select("id").single();
+      if (error) throw error;
+      productId = data.id;
+      return `Created id=${productId}`;
+    });
+
+    await run(1, async () => {
+      const { data, error } = await supabase.from("marketing_products").select("*").eq("id", productId);
+      if (error) throw error;
+      if (!data || data.length === 0) throw new Error("Product not found after insert");
+      return `Found ${data.length} row(s)`;
+    });
+
+    await run(2, async () => {
+      const { error } = await supabase.from("marketing_products").update({ status: "marketing" }).eq("id", productId);
+      if (error) throw error;
+      const { data } = await supabase.from("marketing_products").select("status").eq("id", productId).single();
+      if (data?.status !== "marketing") throw new Error(`Expected 'marketing', got '${data?.status}'`);
+      return "Status → marketing ✓";
+    });
+
+    await run(3, async () => {
+      const { data, error } = await supabase.from("campaign_posts").insert({
+        user_id: userId,
+        product_id: productId,
+        platform: "instagram",
+        caption: "__test_post automated test caption",
+        spend_cents: 500,
+      }).select("id").single();
+      if (error) throw error;
+      postId = data.id;
+      return `Created post id=${postId}`;
+    });
+
+    await run(4, async () => {
+      const { data, error } = await supabase.from("campaign_posts").select("*").eq("id", postId);
+      if (error) throw error;
+      if (!data || data.length === 0) throw new Error("Post not found");
+      return `Found ${data.length} row(s), spend=$${(data[0].spend_cents / 100).toFixed(2)}`;
+    });
+
+    await run(5, async () => {
+      const { data, error } = await supabase.from("marketing_expenses").insert({
+        user_id: userId,
+        category: "ad_spend",
+        description: "__test_expense automated",
+        amount_cents: 1234,
+      }).select("id").single();
+      if (error) throw error;
+      expenseId = data.id;
+      return `Created expense id=${expenseId}`;
+    });
+
+    await run(6, async () => {
+      const { data, error } = await supabase.from("marketing_expenses").select("*").eq("id", expenseId);
+      if (error) throw error;
+      if (!data || data.length === 0) throw new Error("Expense not found");
+      return `Found, amount=$${(data[0].amount_cents / 100).toFixed(2)}`;
+    });
+
+    await run(7, async () => {
+      const { error } = await supabase.from("marketing_expenses").delete().eq("id", expenseId);
+      if (error) throw error;
+      const { data } = await supabase.from("marketing_expenses").select("id").eq("id", expenseId);
+      if (data && data.length > 0) throw new Error("Expense still exists after delete");
+      return "Deleted ✓";
+    });
+
+    await run(8, async () => {
+      const { error } = await supabase.from("campaign_posts").delete().eq("id", postId);
+      if (error) throw error;
+      return "Deleted ✓";
+    });
+
+    await run(9, async () => {
+      const { error } = await supabase.from("marketing_products").delete().eq("id", productId);
+      if (error) throw error;
+      return "Deleted ✓";
+    });
+
+    onRefresh();
+    setRunning(false);
+  }, [userId, running, onRefresh]);
+
+  const passCount = results.filter(r => r.status === "pass").length;
+  const failCount = results.filter(r => r.status === "fail").length;
+  const total = results.length;
+
+  return (
+    <div className="space-y-4">
+      <div className="p-5 rounded-2xl gradient-card border border-border/50">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="font-display text-lg font-medium flex items-center gap-2">
+              <FlaskConical className="h-5 w-5 text-primary" />
+              Dashboard Test Suite
+            </h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              Runs end-to-end CRUD tests against all 3 tables. Test data is cleaned up automatically.
+            </p>
+          </div>
+          <Button onClick={runAll} disabled={running || !userId} className="gap-2">
+            {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+            {running ? "Running…" : "Run All Tests"}
+          </Button>
+        </div>
+
+        {total > 0 && (
+          <div className="mb-4 flex items-center gap-3 text-sm">
+            <span className="text-muted-foreground">{total} tests</span>
+            {passCount > 0 && <span className="text-mint font-medium">{passCount} passed</span>}
+            {failCount > 0 && <span className="text-destructive font-medium">{failCount} failed</span>}
+            {running && <span className="text-muted-foreground">running…</span>}
+          </div>
+        )}
+
+        {results.length > 0 && (
+          <div className="space-y-1.5">
+            {results.map((r, i) => (
+              <div
+                key={i}
+                className={`flex items-center justify-between p-3 rounded-lg text-sm ${
+                  r.status === "pass" ? "bg-mint/10" :
+                  r.status === "fail" ? "bg-destructive/10" :
+                  r.status === "running" ? "bg-primary/10" : "bg-muted/30"
+                }`}
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  {r.status === "pass" && <CheckCircle2 className="h-4 w-4 text-mint shrink-0" />}
+                  {r.status === "fail" && <XCircle className="h-4 w-4 text-destructive shrink-0" />}
+                  {r.status === "running" && <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0" />}
+                  {r.status === "pending" && <Clock className="h-4 w-4 text-muted-foreground shrink-0" />}
+                  <span className="font-medium">{r.name}</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground shrink-0">
+                  {r.detail && <span className="max-w-[200px] truncate">{r.detail}</span>}
+                  {r.durationMs !== undefined && <span>{r.durationMs}ms</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {total === 0 && (
+          <p className="text-sm text-muted-foreground text-center py-6">
+            Click "Run All Tests" to exercise every dashboard feature end-to-end.
+          </p>
+        )}
+      </div>
     </div>
   );
 }
