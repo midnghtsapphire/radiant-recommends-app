@@ -4,10 +4,11 @@ import {
   BarChart3, Plus, Play, Pause, CheckCircle, Trash2, 
   MapPin, DollarSign, TrendingUp, Instagram, Twitter, 
   Facebook, Clock, ArrowUpDown, FlaskConical, Loader2,
-  CheckCircle2, XCircle
+  CheckCircle2, XCircle, Sparkles
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import AiToolsTab from "@/components/AiToolsTab";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { US_STATES, getCounties } from "@/lib/us-locations";
@@ -233,6 +234,7 @@ export default function MarketingDashboard() {
             <TabsTrigger value="posts">Campaign Posts</TabsTrigger>
             <TabsTrigger value="expenses">Expenses</TabsTrigger>
             <TabsTrigger value="stats">Performance</TabsTrigger>
+            <TabsTrigger value="ai" className="gap-1.5"><Sparkles className="h-3.5 w-3.5" />AI Tools</TabsTrigger>
             <TabsTrigger value="tests" className="gap-1.5"><FlaskConical className="h-3.5 w-3.5" />Test Suite</TabsTrigger>
           </TabsList>
 
@@ -540,6 +542,10 @@ export default function MarketingDashboard() {
                 </div>
               </div>
             </div>
+          </TabsContent>
+          {/* AI TOOLS TAB */}
+          <TabsContent value="ai">
+            <AiToolsTab products={products.map(p => ({ id: p.id, product_name: p.product_name, product_type: p.product_type, score: p.score, description: p.description, target_state: p.target_state }))} />
           </TabsContent>
           {/* TEST SUITE TAB */}
           <TabsContent value="tests">
