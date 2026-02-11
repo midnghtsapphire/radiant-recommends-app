@@ -14,7 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          hair_type_preference: string | null
+          id: string
+          premium: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          hair_type_preference?: string | null
+          id: string
+          premium?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          hair_type_preference?: string | null
+          id?: string
+          premium?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      saved_analyses: {
+        Row: {
+          analysis_data: Json
+          analysis_name: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          analysis_data: Json
+          analysis_name: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          analysis_data?: Json
+          analysis_name?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

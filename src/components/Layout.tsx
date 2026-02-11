@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Sparkles, FlaskConical, ListChecks, Megaphone } from "lucide-react";
+import { Sparkles, FlaskConical, ListChecks, Megaphone, LogIn, LogOut, History } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 const navItems = [
   { path: "/", label: "Home", icon: Sparkles },
@@ -11,6 +12,11 @@ const navItems = [
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
+  const { user, signOut } = useAuth();
+
+  const allNav = user
+    ? [...navItems, { path: "/saved", label: "Saved", icon: History }]
+    : navItems;
 
   return (
     <div className="min-h-screen bg-background text-foreground font-body">
@@ -24,7 +30,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </span>
           </Link>
           <div className="hidden md:flex items-center gap-1">
-            {navItems.map((item) => {
+            {allNav.map((item) => {
               const isActive = location.pathname === item.path;
               return (
                 <Link
@@ -48,6 +54,25 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 </Link>
               );
             })}
+            {user ? (
+              <button
+                onClick={() => signOut()}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <LogOut className="h-4 w-4" />
+                Sign Out
+              </button>
+            ) : (
+              <Link
+                to="/auth"
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  location.pathname === "/auth" ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <LogIn className="h-4 w-4" />
+                Sign In
+              </Link>
+            )}
           </div>
         </div>
       </nav>
@@ -55,7 +80,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       {/* Mobile bottom nav */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/50 bg-background/90 backdrop-blur-xl md:hidden">
         <div className="flex items-center justify-around py-2">
-          {navItems.map((item) => {
+          {allNav.map((item) => {
             const isActive = location.pathname === item.path;
             return (
               <Link
@@ -70,6 +95,25 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               </Link>
             );
           })}
+          {user ? (
+            <button
+              onClick={() => signOut()}
+              className="flex flex-col items-center gap-0.5 px-3 py-1 text-xs text-muted-foreground"
+            >
+              <LogOut className="h-5 w-5" />
+              Out
+            </button>
+          ) : (
+            <Link
+              to="/auth"
+              className={`flex flex-col items-center gap-0.5 px-3 py-1 text-xs ${
+                location.pathname === "/auth" ? "text-primary" : "text-muted-foreground"
+              }`}
+            >
+              <LogIn className="h-5 w-5" />
+              Sign In
+            </Link>
+          )}
         </div>
       </nav>
 

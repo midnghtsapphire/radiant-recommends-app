@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FlaskConical, AlertTriangle, CheckCircle2, MinusCircle, Info } from "lucide-react";
+import { FlaskConical, AlertTriangle, CheckCircle2, MinusCircle, Info, Volume2, Save, Loader2 } from "lucide-react";
 import { analyzeIngredients, type AnalysisResult } from "@/lib/ingredients";
 import ScoreRing from "@/components/ScoreRing";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const EXAMPLE =
   "Water, Sodium Laureth Sulfate, Cocamidopropyl Betaine, Glycerin, Panthenol, Dimethicone, Fragrance, Citric Acid, Sodium Chloride, Methylparaben";
@@ -10,10 +13,58 @@ const EXAMPLE =
 export default function Analyzer() {
   const [input, setInput] = useState("");
   const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [playing, setPlaying] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const { user } = useAuth();
+  const { toast } = useToast();
 
   const handleAnalyze = () => {
     if (!input.trim()) return;
     setResult(analyzeIngredients(input));
+  };
+
+  const handleReadAloud = async () => {
+    if (!result || playing) return;
+    setPlaying(true);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ text: result.summary }),
+        }
+      );
+      if (!response.ok) throw new Error("TTS failed");
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audio.onended = () => setPlaying(false);
+      await audio.play();
+    } catch {
+      toast({ variant: "destructive", title: "Voice error", description: "Could not read aloud." });
+      setPlaying(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!result || !user) return;
+    setSaving(true);
+    const { error } = await supabase.from("saved_analyses").insert([{
+      user_id: user.id,
+      analysis_name: input.split(",")[0]?.trim().slice(0, 50) || "Analysis",
+      analysis_data: JSON.parse(JSON.stringify(result)),
+    }]);
+    setSaving(false);
+    if (error) {
+      toast({ variant: "destructive", title: "Save failed", description: error.message });
+    } else {
+      toast({ title: "Saved!", description: "Analysis saved to your history." });
+    }
   };
 
   return (
@@ -78,6 +129,27 @@ export default function Analyzer() {
                       ))}
                     </div>
                   )}
+                  {/* Action buttons */}
+                  <div className="flex items-center gap-2 mt-4">
+                    <button
+                      onClick={handleReadAloud}
+                      disabled={playing}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                    >
+                      {playing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Volume2 className="h-3.5 w-3.5" />}
+                      {playing ? "Playing..." : "Read Aloud"}
+                    </button>
+                    {user && (
+                      <button
+                        onClick={handleSave}
+                        disabled={saving}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-primary/30 text-xs text-primary hover:bg-primary/5 transition-colors disabled:opacity-50"
+                      >
+                        {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                        Save
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
 
