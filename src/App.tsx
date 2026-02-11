@@ -11,6 +11,7 @@ import Recommendations from "./pages/Recommendations";
 import Marketing from "./pages/Marketing";
 import Auth from "./pages/Auth";
 import SavedAnalyses from "./pages/SavedAnalyses";
+import Premium from "./pages/Premium";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
               <Route path="/marketing" element={<Marketing />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/saved" element={<SavedAnalyses />} />
+              <Route path="/premium" element={<Premium />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Layout>
