@@ -81,6 +81,13 @@ const PRESET_TOOLS = [
   { name: "UpTextured", desc: "Textured hair care — 3A-4C curl types, moisture retention, shrinkage management", category: "hair", cost: 1 },
   // ─── Test Pipeline ───
   { name: "UpTestPipeline", desc: "Auto-test all UpTools — connectivity, AI response, DB persistence, OpenRouter validation", category: "test", cost: 1 },
+  // ─── Meta / Orchestration ───
+  { name: "UpImplement", desc: "Auto-implement generated tool from repository — deploy edge function, create DB tables, wire UI", category: "meta", cost: 3 },
+  { name: "UpRun", desc: "Run an implemented tool end-to-end with unit test validation — verify it works in production", category: "meta", cost: 2 },
+  { name: "UpEndToEnd", desc: "Full E2E orchestration — calls UpQA, UpTest, UpCodeReview on every feature/function on site", category: "meta", cost: 3 },
+  { name: "UpEndToEndTesting", desc: "Generate & run comprehensive E2E test suites — user flows, edge cases, regression, Playwright scripts", category: "meta", cost: 3 },
+  { name: "UpSOXCompliance", desc: "SOX compliance audit — access controls, audit trails, data integrity, change management, reporting", category: "meta", cost: 3 },
+  { name: "UpAutoEvent", desc: "Auto-create ALL tools needed for any event/project — QA, test, security, marketing, docs, deployment", category: "meta", cost: 3 },
 ];
 
 const HAIR_CATEGORIES = [
@@ -100,6 +107,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   geo: "🌎 Geographic & Demographic",
   hair: "💇 Hair Sub-Genre Campaigns",
   test: "🧪 Testing",
+  meta: "⚡ Orchestration & Meta-Tools",
 };
 
 export default function GeniusPool() {
@@ -147,6 +155,10 @@ export default function GeniusPool() {
   const [repoGenerating, setRepoGenerating] = useState<string | null>(null);
   const [repoDetail, setRepoDetail] = useState<any>(null);
   const [repoDetailLoading, setRepoDetailLoading] = useState(false);
+  const [eventName, setEventName] = useState("");
+  const [eventType, setEventType] = useState("project");
+  const [eventGenerating, setEventGenerating] = useState(false);
+  const [eventResult, setEventResult] = useState<any>(null);
 
   useEffect(() => {
     if (user) {
@@ -204,6 +216,25 @@ export default function GeniusPool() {
       setRepoDetail(null);
     } catch (e: any) { toast({ title: "Failed", description: e.message, variant: "destructive" }); }
   };
+
+  const handleAutoEvent = async () => {
+    if (!user) { toast({ title: "Sign in required", variant: "destructive" }); return; }
+    if (!eventName) { toast({ title: "Enter event/project name", variant: "destructive" }); return; }
+    setEventGenerating(true);
+    setEventResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("tool-repository", {
+        body: { action: "auto_event", event_name: eventName, event_type: eventType },
+      });
+      if (error) throw error;
+      setEventResult(data);
+      toast({ title: `${data.tools_generated} tools generated for "${eventName}"!` });
+      loadRepo();
+    } catch (e: any) { toast({ title: "Auto-event failed", description: e.message, variant: "destructive" }); }
+    finally { setEventGenerating(false); }
+  };
+
+
 
   const copyText = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -717,6 +748,42 @@ export default function GeniusPool() {
 
           {/* ─── REPOSITORY TAB ─── */}
           <TabsContent value="repo" className="space-y-6">
+            {/* Auto-Event Generator */}
+            <div className="p-5 rounded-2xl border border-accent/30 bg-accent/5">
+              <h2 className="font-display text-lg font-semibold mb-2 flex items-center gap-2">
+                <Zap className="h-5 w-5 text-accent-foreground" /> Auto-Event — Generate ALL Tools
+              </h2>
+              <p className="text-sm text-muted-foreground mb-4">
+                Create an event/project → OpenRouter auto-suggests & generates every tool needed (QA, tests, security, SOX, marketing, docs, deployment).
+              </p>
+              <div className="flex gap-3 flex-wrap mb-4">
+                <Input value={eventName} onChange={(e) => setEventName(e.target.value)} placeholder="Event/project name (e.g. haircare-launch-2026)" className="flex-1 min-w-48" />
+                <select value={eventType} onChange={(e) => setEventType(e.target.value)}
+                  className="rounded-lg border border-border bg-card px-3 py-2 text-sm">
+                  <option value="project">Project</option>
+                  <option value="website">Website</option>
+                  <option value="campaign">Campaign</option>
+                  <option value="saas">SaaS App</option>
+                  <option value="api">API/MCP</option>
+                </select>
+                <Button onClick={handleAutoEvent} disabled={eventGenerating || !eventName} className="gap-2">
+                  {eventGenerating ? <><Loader2 className="h-4 w-4 animate-spin" /> Generating All...</> : <><Rocket className="h-4 w-4" /> Auto-Create All Tools</>}
+                </Button>
+              </div>
+              {eventResult && (
+                <div className="p-3 rounded-lg bg-primary/10 border border-primary/30 text-sm">
+                  <p className="font-semibold">{eventResult.tools_generated} tools generated for "{eventResult.event_name}" ({eventResult.event_type})</p>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {eventResult.results?.map((r: any, i: number) => (
+                      <span key={i} className={`text-xs px-2 py-0.5 rounded-full ${r.status === "ready" ? "bg-primary/20 text-primary" : r.status === "failed" ? "bg-destructive/20 text-destructive" : "bg-muted text-muted-foreground"}`}>
+                        {r.tool_name}: {r.status}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="p-5 rounded-2xl border border-primary/30 bg-primary/5">
               <h2 className="font-display text-lg font-semibold mb-2 flex items-center gap-2">
                 <FolderOpen className="h-5 w-5 text-primary" /> Tool Repository
