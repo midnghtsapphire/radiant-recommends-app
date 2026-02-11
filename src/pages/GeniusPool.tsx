@@ -56,6 +56,13 @@ const PRESET_TOOLS = [
   { name: "UpFAQ", desc: "Auto-generate comprehensive FAQs for any website or product", category: "intel" },
   { name: "UpDataScientist", desc: "Data analysis, trend prediction, market intelligence, performance analytics", category: "intel" },
   { name: "UpPatent", desc: "Patent research, prior art analysis, patent application drafting, IP strategy", category: "intel" },
+  // ─── Voice & Audio SaaS ───
+  { name: "UpVoice", desc: "Open-source voice SaaS platform — TTS, STT, cloning, streaming. Replaces ElevenLabs with free models (Coqui, Piper, Bark, Whisper)", category: "voice" },
+  { name: "UpTTS", desc: "Text-to-speech engine using Coqui TTS, Piper, Bark — multi-language, multi-voice, SSML support", category: "voice" },
+  { name: "UpSTT", desc: "Speech-to-text transcription using OpenAI Whisper — real-time, batch, multi-language, speaker diarization", category: "voice" },
+  { name: "UpVoiceClone", desc: "Voice cloning from audio samples using open-source models — custom voices for branding, podcasts, marketing", category: "voice" },
+  { name: "UpAudioMaster", desc: "Audio processing pipeline — noise reduction, normalization, format conversion, podcast editing automation", category: "voice" },
+  { name: "UpPodcast", desc: "Auto-generate podcasts from blog posts/articles — script writing, multi-voice TTS, intro/outro, RSS feed", category: "voice" },
 ];
 
 const HAIR_CATEGORIES = [
@@ -381,10 +388,10 @@ export default function GeniusPool() {
               <h3 className="font-display text-lg font-semibold mb-3 flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-primary" /> Quick-Launch Presets — click to auto-run pipeline
               </h3>
-              {(["revenue", "quality", "brand", "intel"] as const).map((cat) => (
+              {(["revenue", "quality", "brand", "intel", "voice"] as const).map((cat) => (
                 <div key={cat} className="mb-4">
                   <h4 className="text-xs uppercase tracking-wider text-muted-foreground mb-2 font-semibold">
-                    {cat === "revenue" ? "💰 Marketing & Revenue" : cat === "quality" ? "🛡️ Quality & Security" : cat === "brand" ? "🎨 Branding & Business" : "🧠 Intelligence"}
+                    {cat === "revenue" ? "💰 Marketing & Revenue" : cat === "quality" ? "🛡️ Quality & Security" : cat === "brand" ? "🎨 Branding & Business" : cat === "intel" ? "🧠 Intelligence" : "🎙️ Voice & Audio SaaS"}
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {PRESET_TOOLS.filter((t) => t.category === cat).map((tool) => (
