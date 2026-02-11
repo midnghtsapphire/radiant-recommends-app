@@ -13,11 +13,11 @@ const OPENROUTER_MODELS = [
 ];
 
 interface RepoRequest {
-  action: "generate" | "list" | "get" | "mark_implemented" | "batch_generate" | "auto_event" | "suggest_tools" | "audit";
+  action: "generate" | "generate_pending" | "list" | "get" | "mark_implemented" | "batch_generate" | "auto_event" | "suggest_tools" | "audit" | "rename";
   tool_name?: string;
   tool_names?: string[];
   event_name?: string;
-  event_type?: string; // "project" | "website" | "campaign"
+  event_type?: string;
   tool_description?: string;
   repo_id?: string;
 }
@@ -149,6 +149,53 @@ Deno.serve(async (req) => {
     if (body.action === "generate" && body.tool_name) {
       const result = await generateToolAssets(body.tool_name, body.tool_description || "", body.event_name || "haircare-app", userId, supabaseAdmin);
       return json(result);
+    }
+
+    // ─── GENERATE FOR EXISTING PENDING TOOL (skip insert) ───
+    if (body.action === "generate_pending" && body.repo_id) {
+      const { data: existing } = await supabaseAdmin
+        .from("tool_repository")
+        .select("*")
+        .eq("id", body.repo_id)
+        .single();
+      if (!existing) throw new Error("Tool not found");
+      
+      const desc = existing.blueprint?.description || existing.tool_name;
+      await supabaseAdmin.from("tool_repository").update({ status: "generating" }).eq("id", body.repo_id);
+      
+      const result = await generateToolAssetsForExisting(
+        existing.id, existing.tool_name, desc, existing.event_name || "mega-suite-2026", supabaseAdmin
+      );
+      return json(result);
+    }
+
+    // ─── RENAME: AI suggests shorter names ───
+    if (body.action === "rename") {
+      const { data: tools } = await supabaseAdmin
+        .from("tool_repository")
+        .select("id, tool_name, blueprint")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      const names = (tools || []).map((t: any) => `${t.tool_name}: ${t.blueprint?.description || "no desc"}`).join("\n");
+      const renamePrompt = `Rename these tools. Rules: Keep "Up" prefix. Max 10 chars total. Domain-friendly. Catchy. Return JSON array: [{"old":"UpOldName","new":"UpNew","reason":"why"}].
+
+${names}`;
+      const lovableKey = Deno.env.get("LOVABLE_API_KEY");
+      let raw: string;
+      if (lovableKey) {
+        const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ model: "google/gemini-3-flash-preview", messages: [{ role: "user", content: renamePrompt }] }),
+        });
+        if (!resp.ok) throw new Error(`Rename AI failed [${resp.status}]`);
+        const data = await resp.json();
+        raw = data.choices?.[0]?.message?.content || "";
+      } else {
+        raw = await callOpenRouter(renamePrompt);
+      }
+      const parsed = parseJSON(raw);
+      return json({ renames: parsed || [], raw: parsed ? undefined : raw });
     }
 
     // ─── BATCH GENERATE ───
@@ -375,59 +422,44 @@ async function generateToolAssets(
 
   try {
     // ─── MEGA PROMPT: Generate ALL assets in one call ───
-    const megaPrompt = `You are a senior software architect. Generate COMPLETE production-ready assets for the tool "${toolName}" for a hair care SaaS application.
-${toolDescription ? `Tool purpose: ${toolDescription}` : ""}
-Event/Project: ${eventName}
-Domain: Hair care, beauty, anti-aging, marketing automation.
+    const megaPrompt = `Senior architect: generate production-ready assets for "${toolName}".
+${toolDescription ? `Purpose: ${toolDescription}` : ""}
+Project: ${eventName}. Domain: SaaS, marketing, automation, AI tools.
 
-Return a SINGLE JSON object with ALL of these fields:
+Return ONE JSON object with these keys:
+- data_dictionary: {tables:[{table_name,description,columns:[{name,type,nullable,default,description}],rls_policies:[{name,command,using,with_check}]}],relationships:[{from,to,type}]}
+- db_migration_sql: runnable PostgreSQL (CREATE TABLE, RLS, indexes). All tables need user_id UUID NOT NULL, RLS scoped to auth.uid()=user_id.
+- roadmap: {phases:[{phase,duration,tasks:[],deliverables:[]}]}
+- blueprint: {architecture,components:[{name,type,description}],integrations:[],tech_stack:[]}
+- project_plan: {milestones:[{name,tasks:[],priority}],estimated_hours,dependencies:[]}
+- api_spec: {endpoints:[{method,path,description,request_body:{},response:{}}]}
+- source_code: Complete TypeScript Deno.serve() edge function with CORS + auth + error handling.
+- master_prompt: System prompt for this tool's AI behavior.
+- readme: README.md with setup, API docs, examples.`;
 
-{
-  "data_dictionary": {
-    "tables": [
-      {
-        "table_name": "string",
-        "description": "string",
-        "columns": [
-          { "name": "string", "type": "string (postgres type)", "nullable": bool, "default": "string|null", "description": "string" }
-        ],
-        "rls_policies": [
-          { "name": "string", "command": "SELECT|INSERT|UPDATE|DELETE", "using": "string", "with_check": "string|null" }
-        ]
+    // Use Lovable AI (Gemini Flash) for speed — OpenRouter free models too slow
+    let raw: string;
+    const lovableKey = Deno.env.get("LOVABLE_API_KEY");
+    if (lovableKey) {
+      const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "google/gemini-3-flash-preview",
+          messages: [{ role: "user", content: megaPrompt }],
+        }),
+      });
+      if (!resp.ok) {
+        console.log(`[REPO] Lovable AI failed [${resp.status}], falling back to OpenRouter`);
+        raw = await callOpenRouter(megaPrompt, OPENROUTER_MODELS[0]);
+      } else {
+        const data = await resp.json();
+        raw = data.choices?.[0]?.message?.content || "";
+        if (!raw) raw = await callOpenRouter(megaPrompt, OPENROUTER_MODELS[0]);
       }
-    ],
-    "relationships": [ { "from": "table.column", "to": "table.column", "type": "one-to-many|many-to-many" } ]
-  },
-  "db_migration_sql": "-- Complete runnable SQL: CREATE TABLE, RLS, indexes, triggers. Must be valid PostgreSQL.",
-  "roadmap": {
-    "phases": [
-      { "phase": "string", "duration": "string", "tasks": ["string"], "deliverables": ["string"] }
-    ]
-  },
-  "blueprint": {
-    "architecture": "string describing system design",
-    "components": [ { "name": "string", "type": "edge_function|react_component|mcp_tool|db_table", "description": "string" } ],
-    "integrations": ["string"],
-    "tech_stack": ["string"]
-  },
-  "project_plan": {
-    "milestones": [ { "name": "string", "tasks": ["string"], "priority": "high|medium|low" } ],
-    "estimated_hours": number,
-    "dependencies": ["string"]
-  },
-  "api_spec": {
-    "endpoints": [
-      { "method": "POST|GET", "path": "string", "description": "string", "request_body": {}, "response": {} }
-    ]
-  },
-  "source_code": "Complete TypeScript Supabase Edge Function code using Deno.serve(). Include CORS, auth, error handling. Production-ready.",
-  "master_prompt": "The system prompt that defines this tool's AI behavior.",
-  "readme": "Full README.md with setup instructions, API docs, examples."
-}
-
-IMPORTANT: The db_migration_sql must be RUNNABLE SQL. Include CREATE TABLE, ALTER TABLE ENABLE ROW LEVEL SECURITY, CREATE POLICY, and CREATE INDEX statements. All tables must have user_id UUID NOT NULL and RLS policies scoped to auth.uid() = user_id.`;
-
-    const raw = await callOpenRouter(megaPrompt, OPENROUTER_MODELS[0]);
+    } else {
+      raw = await callOpenRouter(megaPrompt, OPENROUTER_MODELS[0]);
+    }
     const parsed = parseJSON(raw);
 
     if (parsed) {
@@ -473,6 +505,69 @@ IMPORTANT: The db_migration_sql must be RUNNABLE SQL. Include CREATE TABLE, ALTE
       .update({ status: "failed", source_code: e.message, generation_duration_ms: Date.now() - start })
       .eq("id", record.id);
     throw e;
+  }
+}
+
+async function generateToolAssetsForExisting(
+  recordId: string,
+  toolName: string,
+  toolDescription: string,
+  eventName: string,
+  supabase: any
+) {
+  const start = Date.now();
+  console.log(`[REPO] Generating assets for existing ${toolName} (${recordId})`);
+  
+  const megaPrompt = `Senior architect: generate production-ready assets for "${toolName}".
+Purpose: ${toolDescription}
+Project: ${eventName}. Domain: SaaS, marketing, automation, AI tools.
+
+Return ONE JSON object with keys: data_dictionary, db_migration_sql, roadmap, blueprint, project_plan, api_spec, source_code (TypeScript Deno.serve()), master_prompt, readme.
+db_migration_sql must be runnable PostgreSQL with RLS. All tables need user_id UUID NOT NULL.`;
+
+  let raw: string;
+  const lovableKey = Deno.env.get("LOVABLE_API_KEY");
+  if (lovableKey) {
+    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ model: "google/gemini-3-flash-preview", messages: [{ role: "user", content: megaPrompt }] }),
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      raw = data.choices?.[0]?.message?.content || "";
+    } else {
+      raw = await callOpenRouter(megaPrompt, OPENROUTER_MODELS[0]);
+    }
+  } else {
+    raw = await callOpenRouter(megaPrompt, OPENROUTER_MODELS[0]);
+  }
+
+  const parsed = parseJSON(raw);
+  if (parsed) {
+    await supabase.from("tool_repository").update({
+      status: "ready",
+      data_dictionary: parsed.data_dictionary || null,
+      db_schema: JSON.stringify(parsed.data_dictionary?.tables || [], null, 2),
+      db_migration_sql: parsed.db_migration_sql || null,
+      roadmap: parsed.roadmap || null,
+      blueprint: parsed.blueprint || null,
+      project_plan: parsed.project_plan || null,
+      source_code: parsed.source_code || null,
+      api_spec: parsed.api_spec || null,
+      master_prompt: parsed.master_prompt || null,
+      readme: parsed.readme || null,
+      model_used: "gemini-3-flash",
+      generation_duration_ms: Date.now() - start,
+      updated_at: new Date().toISOString(),
+    }).eq("id", recordId);
+    return { id: recordId, tool_name: toolName, status: "ready", duration_ms: Date.now() - start, assets: Object.keys(parsed) };
+  } else {
+    await supabase.from("tool_repository").update({
+      status: "raw", source_code: raw, model_used: "gemini-3-flash",
+      generation_duration_ms: Date.now() - start, updated_at: new Date().toISOString(),
+    }).eq("id", recordId);
+    return { id: recordId, tool_name: toolName, status: "raw", duration_ms: Date.now() - start };
   }
 }
 
