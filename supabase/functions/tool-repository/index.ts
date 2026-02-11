@@ -13,7 +13,7 @@ const OPENROUTER_MODELS = [
 ];
 
 interface RepoRequest {
-  action: "generate" | "list" | "get" | "mark_implemented" | "batch_generate" | "auto_event" | "suggest_tools";
+  action: "generate" | "list" | "get" | "mark_implemented" | "batch_generate" | "auto_event" | "suggest_tools" | "audit";
   tool_name?: string;
   tool_names?: string[];
   event_name?: string;
@@ -270,6 +270,79 @@ Return JSON array: [{"name": "UpToolName", "description": "what it does and reve
         tools: inserted,
         status: "queued",
         message: "Tools queued. Call 'generate' for each tool_name to create full assets.",
+      });
+    }
+
+    // ─── AUDIT: Deep research existing tools, consolidate, suggest better ones ───
+    if (body.action === "audit") {
+      const { data: existing } = await supabaseAdmin
+        .from("tool_repository")
+        .select("tool_name, event_name, status, blueprint")
+        .order("created_at", { ascending: false })
+        .limit(100);
+
+      const toolList = (existing || []).map((t: any) => t.tool_name).join(", ");
+
+      const auditPrompt = `Audit these tools. Prefix "Up".
+
+EXISTING: ${toolList}
+
+1. Overlapping tools? Merge them.
+2. Missing tools? Add them.
+3. Bad names? Rename.
+4. 5 novel tools nobody built.
+5. Each: revenue potential, time-to-market, fail risk.
+
+JSON array: [{"name":"UpX","description":"string","action":"keep|merge|rename|new|remove","merge_from":["UpA","UpB"],"category":"string","order":1}]. Max 25.`;
+
+      // Use Lovable AI (Gemini) for speed — OpenRouter free models too slow for audit
+      const lovableKey = Deno.env.get("LOVABLE_API_KEY");
+      let raw: string;
+      if (lovableKey) {
+        const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "google/gemini-3-flash-preview",
+            messages: [{ role: "user", content: auditPrompt }],
+          }),
+        });
+        if (!resp.ok) throw new Error(`Lovable AI [${resp.status}]: ${await resp.text()}`);
+        const data = await resp.json();
+        raw = data.choices?.[0]?.message?.content || "";
+      } else {
+        raw = await callOpenRouter(auditPrompt, OPENROUTER_MODELS[0]);
+      }
+      const parsed = parseJSON(raw);
+
+      if (!parsed || !Array.isArray(parsed)) {
+        return json({ error: "Failed to parse audit", raw });
+      }
+
+      const newTools = parsed.filter((t: any) => t.action === "new" || t.action === "merge");
+      if (newTools.length > 0) {
+        const rows = newTools.slice(0, 25).map((tool: any, i: number) => ({
+          user_id: userId,
+          tool_name: tool.name || `UpAudit${i}`,
+          event_name: "audit-consolidation-2026",
+          status: "pending",
+          blueprint: {
+            category: tool.category,
+            order: tool.order || i + 1,
+            description: tool.description,
+            action: tool.action,
+            merge_from: tool.merge_from,
+          },
+        }));
+        await supabaseAdmin.from("tool_repository").insert(rows);
+      }
+
+      return json({
+        audit_results: parsed,
+        existing_count: existing?.length || 0,
+        new_tools_created: newTools.length,
+        consolidations: parsed.filter((t: any) => t.action === "merge").length,
+        removals: parsed.filter((t: any) => t.action === "remove").length,
       });
     }
 
