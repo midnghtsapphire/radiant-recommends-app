@@ -219,18 +219,28 @@ Return JSON:
       const eventName = body.event_name || "haircare-app";
       const eventType = body.event_type || "project";
 
-      // Step 1: Get tool suggestions — research-driven
-      const suggestPrompt = `You are a visionary architect and naming strategist. For a "${eventType}" called "${eventName}", do the following:
+      // Step 1: Get tool suggestions — research-driven with revenue projections
+      const suggestPrompt = `You are a visionary architect, market strategist, and revenue engineer. For a "${eventType}" called "${eventName}", do the following:
 
-1. RESEARCH: What existing apps, APIs, open-source projects exist in this space? What are their weaknesses?
-2. NAMING CONVENTION: Our prefix is "Up" (e.g., UpQA, UpSEO). Use it consistently.
-3. DEEPFAKE & SECURITY: Include deepfake detection, testing, AI content verification, prompt injection detection, trust scoring.
-4. CREATIVE DIRECTION: Think PoofAgents (genie-in-a-lamp AI agents), glassy 3D, anime GenZ themes, generational targeting (GenZ/Millennials/GenX/Boomers), catchy addictive branding. Each tool needs a memorable name.
-5. TOOL SUITE: Design the COMPLETE tool suite tailored for "${eventType}".
-6. NOVEL IDEAS: 3-5 renaissance-level tools that don't exist anywhere.
-7. COLLABORATORS: Recommend any other AI models, APIs, or services that should be in the mix.
+1. DEEP RESEARCH: What existing apps, APIs, open-source projects, Indiegogo/Kickstarter campaigns exist in this space? What are their weaknesses? How do we build 10x better for free?
+2. NAMING CONVENTION: Our prefix is "Up" (e.g., UpQA, UpSEO, UpPredictiveStock, UpFastMoneyToday). Use it consistently. Names must be catchy, addictive, memorable.
+3. REVENUE PROJECTIONS FOR EVERY TOOL:
+   - Time to first dollar: today? this week? this month?
+   - Projected revenue: $100/day, $500/day, $1000/day scenarios
+   - Free advertising strategy vs paid advertising ROI
+   - When will it fail? Why might it not work? How to make it work anyway?
+4. PREDICTIVE & INVESTMENT TOOLS: Include UpPredictiveStock, UpPredictiveCrypto, UpPredictiveTesla, UpPredictiveEconomics, UpPredictiveEmergingTech, UpPredictiveGetRich — algorithms, signals, probability engines.
+5. FAST MONEY TOOLS: UpSell, UpFastMoneyToday, UpIndiegogo, UpKickstarter, UpCrowdfund, UpRevenueProjector, UpFreeAdvertising, UpPaidAdOptimizer — revenue captured TODAY.
+6. SAFETY TOOLS (UpBELL project): UpWeaponDetect, UpEdgeWeapon, UpEdgeActiveShooter, UpThreatAssess — deep research on weapon detection, active shooter prevention, school safety AI.
+7. DEEPFAKE & SECURITY: Include deepfake detection, testing, AI content verification, prompt injection detection, trust scoring.
+8. CREATIVE DIRECTION: Think PoofAgents (genie-in-a-lamp AI agents), glassy 3D, anime GenZ themes, generational targeting (GenZ/Millennials/GenX/Boomers), catchy addictive branding.
+9. MARKETING PLAN: Deep research on unconventional, genius, creative marketing — guerrilla, viral, Reddit/HN/ProductHunt launches, zero-cost growth hacks. Create a sub-genre marketing plan for EACH tool.
+10. FAILURE ANALYSIS: For each tool — when will it fail? Why won't it work? How to make it work? Pivot strategies.
+11. NOVEL IDEAS: 5-10 renaissance-level tools that don't exist anywhere. Better clones, higher power, obsessed-love-it ideas.
+12. COLLABORATORS: Recommend AI models, APIs, services, open-source projects to integrate. Decrease need for paid APIs.
+13. TOOL SUITE: Design the COMPLETE tool suite tailored for "${eventType}". Include sub-agents and sub-genres as separate tools.
 
-Return JSON array: [{"name": "UpToolName", "description": "what it does", "category": "string", "order": 1}]. Max 25 tools.`;
+Return JSON array: [{"name": "UpToolName", "description": "what it does and revenue potential", "category": "string", "order": 1, "revenue_today": "$X", "time_to_market": "today|week|month", "fail_risk": "low|medium|high", "marketing_strategy": "string"}]. Max 25 tools.`;
       const suggestRaw = await callOpenRouter(suggestPrompt, OPENROUTER_MODELS[1]);
       const suggestedTools = parseJSON(suggestRaw);
 
