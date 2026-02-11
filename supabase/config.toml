@@ -1,1 +1,7 @@
 project_id = "ubbiqmjmwoezrkvathpx"
+
+[functions.test-pipeline]
+verify_jwt = false
+
+[functions.agent-credits]
+verify_jwt = false

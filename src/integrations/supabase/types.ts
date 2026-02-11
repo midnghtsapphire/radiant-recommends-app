@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      agent_sessions: {
+        Row: {
+          agent_tool: string
+          completed_at: string | null
+          created_at: string
+          credits_spent: number
+          id: string
+          request_data: Json | null
+          result_data: Json | null
+          started_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          agent_tool: string
+          completed_at?: string | null
+          created_at?: string
+          credits_spent?: number
+          id?: string
+          request_data?: Json | null
+          result_data?: Json | null
+          started_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          agent_tool?: string
+          completed_at?: string | null
+          created_at?: string
+          credits_spent?: number
+          id?: string
+          request_data?: Json | null
+          result_data?: Json | null
+          started_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       auto_affiliate_links: {
         Row: {
           affiliate_tag: string | null
@@ -291,6 +330,45 @@ export type Database = {
         }
         Relationships: []
       }
+      pipeline_test_results: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          error_message: string | null
+          id: string
+          result_data: Json | null
+          status: string
+          steps_completed: number
+          tool_name: string
+          total_steps: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          result_data?: Json | null
+          status?: string
+          steps_completed?: number
+          tool_name: string
+          total_steps?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          result_data?: Json | null
+          status?: string
+          steps_completed?: number
+          tool_name?: string
+          total_steps?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -338,6 +416,33 @@ export type Database = {
           analysis_name?: string
           created_at?: string
           id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_credits: {
+        Row: {
+          created_at: string
+          credits: number
+          id: string
+          lifetime_purchased: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          credits?: number
+          id?: string
+          lifetime_purchased?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          credits?: number
+          id?: string
+          lifetime_purchased?: number
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
