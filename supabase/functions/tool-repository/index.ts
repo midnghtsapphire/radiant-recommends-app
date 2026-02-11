@@ -6,10 +6,10 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const OPENROUTER_MODELS = [
-  "tngtech/deepseek-r1t2-chimera:free",
-  "arcee-ai/trinity-large-preview:free",
-  "openrouter/free",
+const LOVABLE_MODELS = [
+  "google/gemini-3-flash-preview",
+  "google/gemini-2.5-flash",
+  "google/gemini-2.5-pro",
 ];
 
 interface RepoRequest {
@@ -24,52 +24,34 @@ interface RepoRequest {
 
 // UpRetry: OpenRouter 3x (cycling models) → Gemini fallback. Automated resilience.
 async function upRetry(prompt: string, maxRetries = 3): Promise<{ content: string; model: string; attempts: number }> {
-  const apiKey = Deno.env.get("OPENROUTER_API_KEY");
+  const lovableKey = Deno.env.get("LOVABLE_API_KEY");
+  if (!lovableKey) throw new Error("LOVABLE_API_KEY not configured");
   let attempts = 0;
 
-  // Phase 1: Try OpenRouter models up to maxRetries times
-  if (apiKey) {
-    for (let i = 0; i < maxRetries; i++) {
-      const model = OPENROUTER_MODELS[i % OPENROUTER_MODELS.length];
-      attempts++;
-      try {
-        console.log(`[UpRetry] Attempt ${attempts}/${maxRetries} with ${model}`);
-        const resp = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-            "HTTP-Referer": "https://lovable.dev",
-          },
-          body: JSON.stringify({ model, messages: [{ role: "user", content: prompt }], max_tokens: 8000 }),
-        });
-        if (resp.status === 429) { console.log(`[UpRetry] ${model} rate-limited, cycling...`); continue; }
-        if (!resp.ok) { console.log(`[UpRetry] ${model} error ${resp.status}, cycling...`); continue; }
-        const data = await resp.json();
-        const content = data.choices?.[0]?.message?.content || "";
-        if (content) return { content, model, attempts };
-        console.log(`[UpRetry] ${model} returned empty, cycling...`);
-      } catch (e) {
-        console.log(`[UpRetry] ${model} threw: ${e}`);
-      }
+  // Cycle through best paid Lovable AI models with retry
+  for (let i = 0; i < maxRetries; i++) {
+    const model = LOVABLE_MODELS[i % LOVABLE_MODELS.length];
+    attempts++;
+    try {
+      console.log(`[UpRetry] Attempt ${attempts}/${maxRetries} with ${model}`);
+      const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ model, messages: [{ role: "user", content: prompt }] }),
+      });
+      if (resp.status === 429) { console.log(`[UpRetry] ${model} rate-limited, cycling...`); await new Promise(r => setTimeout(r, 2000)); continue; }
+      if (resp.status === 402) throw new Error("Credits exhausted — please add funds to your workspace");
+      if (!resp.ok) { console.log(`[UpRetry] ${model} error ${resp.status}, cycling...`); continue; }
+      const data = await resp.json();
+      const content = data.choices?.[0]?.message?.content || "";
+      if (content) return { content, model, attempts };
+      console.log(`[UpRetry] ${model} returned empty, cycling...`);
+    } catch (e: any) {
+      if (e.message?.includes("Credits exhausted")) throw e;
+      console.log(`[UpRetry] ${model} threw: ${e}`);
     }
   }
-
-  // Phase 2: Gemini fallback (always works if LOVABLE_API_KEY set)
-  const lovableKey = Deno.env.get("LOVABLE_API_KEY");
-  if (!lovableKey) throw new Error("All OpenRouter attempts failed and no LOVABLE_API_KEY for fallback");
-  attempts++;
-  console.log(`[UpRetry] All OpenRouter failed. Falling back to Gemini (attempt ${attempts})`);
-  const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ model: "google/gemini-3-flash-preview", messages: [{ role: "user", content: prompt }] }),
-  });
-  if (!resp.ok) throw new Error(`Gemini fallback failed [${resp.status}]`);
-  const data = await resp.json();
-  const content = data.choices?.[0]?.message?.content || "";
-  if (!content) throw new Error("Gemini returned empty");
-  return { content, model: "gemini-3-flash", attempts };
+  throw new Error(`All ${maxRetries} attempts failed across Lovable AI models`);
 }
 
 // Legacy wrapper for existing code
