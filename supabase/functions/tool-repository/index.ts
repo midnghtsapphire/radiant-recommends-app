@@ -124,23 +124,47 @@ Deno.serve(async (req) => {
     if (body.action === "suggest_tools") {
       const eventName = body.event_name || "haircare-app";
       const eventType = body.event_type || "project";
-      const suggestPrompt = `You are a senior software architect. For a "${eventType}" called "${eventName}", suggest ALL tools needed to make it production-ready.
+      const suggestPrompt = `You are a visionary software architect and market strategist. For a "${eventType}" called "${eventName}", research and suggest ALL tools needed to make it production-ready AND industry-leading.
 
-Categories to cover:
-- Core features (main functionality tools)
-- QA & Testing (unit tests, E2E, code review, regression)
-- Security & Compliance (SOX, OWASP, prompt injection detection)
-- Marketing & Revenue (SEO, social media, affiliate, campaigns)
-- DevOps & Monitoring (tracing, logging, CI/CD, deployment)
-- Documentation (data dictionary, API docs, user manual)
+RESEARCH FIRST:
+- What existing free/open-source APIs, apps, or platforms solve similar problems? List them.
+- What are the BEST paid competitors? How can we build something better for free?
+- What new-age renaissance ideas could disrupt this space? Think beyond what exists.
+- What would investors, stakeholders, and technical reviewers expect to see?
+
+TOOL CATEGORIES (suggest tools for ALL that apply to "${eventType}"):
+- Core Features: main functionality, unique differentiators
+- Business Formation: UpDomain, UpEIN, UpSOS, UpBusinessLicense, UpCertificates, UpInsurance
+- App Creation: UpApp (assembles everything into working app), UpSubscription, UpPayments
+- Marketing & Revenue: UpSEO, UpSocialMedia, UpAffiliate, UpBlueOcean, UpContent, UpYouTube
+- QA & Testing: UpQA, UpTest, UpCodeReview, UpEndToEnd, UpEndToEndTesting
+- Security & Compliance: UpSOXCompliance, UpAutoDetectionPromptInjections, UpDeepFakeDetection
+- DevOps: UpTracing, UpMonitoring, UpCI, UpDeployment
+- Documentation: UpDataDictionary, UpAPIDoc, UpUserManual, UpTechManual
+- Branding: UpLogo, UpFavCon, UpAltText, UpBrandKit
+- Voice & Media: UpVoice, UpTTS, UpPodcast, UpVideo
+- Orchestration: UpImplement, UpRun, UpAutoEvent
+
+IMPORTANT: Not every ${eventType} needs every tool. A website needs UpDomain, UpSEO, UpSubscription. A campaign needs UpSocialMedia, UpContent, UpAffiliate. A SaaS needs UpApp, UpSubscription, UpPayments, UpQA. Tailor the list.
+
+Also suggest 3-5 NOVEL tools that don't exist yet but SHOULD — renaissance ideas that would give "${eventName}" an unfair advantage.
 
 Return JSON:
 {
   "event_name": "${eventName}",
   "event_type": "${eventType}",
+  "market_research": {
+    "existing_competitors": [{ "name": "string", "url": "string", "weakness": "string" }],
+    "free_apis_available": ["string"],
+    "blue_ocean_opportunities": ["string"]
+  },
   "suggested_tools": [
-    { "name": "UpToolName", "description": "What it does", "category": "qa|security|marketing|devops|docs|core", "priority": "critical|high|medium|low" }
+    { "name": "UpToolName", "description": "What it does", "category": "core|business|app|marketing|qa|security|devops|docs|brand|voice|meta", "priority": "critical|high|medium|low", "why_needed": "string" }
   ],
+  "novel_tools": [
+    { "name": "UpToolName", "description": "Renaissance idea that doesn't exist yet", "competitive_advantage": "string" }
+  ],
+  "recommended_order": ["UpTool1", "UpTool2"],
   "total_tools": number,
   "estimated_generation_time_minutes": number
 }`;
@@ -154,8 +178,22 @@ Return JSON:
       const eventName = body.event_name || "haircare-app";
       const eventType = body.event_type || "project";
 
-      // Step 1: Get tool suggestions
-      const suggestPrompt = `You are a senior software architect. For a "${eventType}" called "${eventName}", list exactly the tool names needed. Return JSON array of objects with "name" and "description" fields only. Include tools for: core features, QA (UpQA, UpTest, UpCodeReview), E2E testing (UpEndToEnd, UpEndToEndTesting), security (UpSOXCompliance, UpAutoDetectionPromptInjections), implementation (UpImplement, UpRun), marketing, and monitoring. Max 15 tools.`;
+      // Step 1: Get tool suggestions — research-driven
+      const suggestPrompt = `You are a visionary architect. For a "${eventType}" called "${eventName}", research what exists and suggest the COMPLETE tool suite needed. 
+
+Research existing apps/APIs in this space. Identify weaknesses. Design tools that are BETTER than anything on the market.
+
+For "${eventType}" type, include ONLY relevant tools from:
+- ${eventType === "website" || eventType === "saas" ? "Business: UpDomain, UpSEO, UpSubscription, UpPayments, UpBusinessLicense, UpCertificates, UpSOS, UpEIN, UpInsurance" : ""}
+- ${eventType === "campaign" ? "Marketing: UpSocialMedia, UpAffiliate, UpContent, UpYouTube, UpBlueOcean, UpChatter, UpBackLinking, UpLongTail" : ""}
+- App Assembly: UpApp (final assembly), UpImplement, UpRun
+- QA: UpQA, UpTest, UpCodeReview, UpEndToEnd
+- Security: UpSOXCompliance, UpAutoDetectionPromptInjections
+- Docs: UpDataDictionary, UpAPIDoc, UpUserManual
+- Brand: UpLogo, UpFavCon, UpAltText
+- Also suggest 2-3 NOVEL tools specific to "${eventName}" that would give it an unfair advantage.
+
+Return JSON array of objects: [{"name": "UpToolName", "description": "what it does", "order": 1}]. Order by implementation sequence. Max 20 tools.`;
       const suggestRaw = await callOpenRouter(suggestPrompt, OPENROUTER_MODELS[1]);
       const suggestedTools = parseJSON(suggestRaw);
 

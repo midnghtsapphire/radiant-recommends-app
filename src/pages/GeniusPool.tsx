@@ -53,11 +53,23 @@ const PRESET_TOOLS = [
   { name: "UpDomain", desc: "Domain name research, availability checking, SEO-friendly naming, TLD strategy", category: "brand", cost: 1 },
   { name: "UpEIN", desc: "EIN application guidance, IRS form auto-fill templates, business entity setup", category: "brand", cost: 1 },
   { name: "UpSOS", desc: "Secretary of State filing guidance, LLC/Corp formation steps, state-by-state requirements", category: "brand", cost: 1 },
+  { name: "UpBusinessLicense", desc: "Business license research by state/county, application templates, compliance checklist", category: "brand", cost: 1 },
+  { name: "UpCertificates", desc: "SSL certs, professional certifications, industry credentials, compliance certificates", category: "brand", cost: 1 },
+  { name: "UpInsurance", desc: "Business insurance research, liability coverage, E&O, product liability for beauty/hair", category: "brand", cost: 1 },
+  { name: "UpBrandKit", desc: "Complete brand identity — colors, fonts, voice guidelines, templates, social media kit", category: "brand", cost: 2 },
+  // ─── App Creation & Payments ───
+  { name: "UpApp", desc: "Final app assembly — wires all generated tools into working application, routes, UI, deployment", category: "app", cost: 3 },
+  { name: "UpSubscription", desc: "Subscription management — plans, tiers, billing cycles, Stripe integration, usage metering", category: "app", cost: 3 },
+  { name: "UpPayments", desc: "Payment processing — checkout flows, invoicing, refunds, multi-currency, tax calculation", category: "app", cost: 3 },
+  { name: "UpOnboarding", desc: "User onboarding flows — welcome wizard, tutorials, progressive disclosure, activation metrics", category: "app", cost: 2 },
+  { name: "UpDashboard", desc: "Admin dashboard — analytics, user management, revenue tracking, system health monitoring", category: "app", cost: 3 },
+  { name: "UpAuth", desc: "Authentication system — signup, login, OAuth, MFA, role-based access, session management", category: "app", cost: 2 },
   // ─── Intelligence ───
   { name: "UpAgent", desc: "Customer service agent, complaint handling, product Q&A, phone/email automation", category: "intel", cost: 2 },
   { name: "UpFAQ", desc: "Auto-generate comprehensive FAQs for any website or product", category: "intel", cost: 1 },
   { name: "UpDataScientist", desc: "Data analysis, trend prediction, market intelligence, performance analytics", category: "intel", cost: 3 },
   { name: "UpPatent", desc: "Patent research, prior art analysis, patent application drafting, IP strategy", category: "intel", cost: 3 },
+  { name: "UpCompetitorIntel", desc: "Competitor analysis — pricing, features, weaknesses, market positioning, clone-or-beat strategy", category: "intel", cost: 2 },
   // ─── Voice & Audio SaaS ───
   { name: "UpVoice", desc: "Open-source voice SaaS platform — TTS, STT, cloning, streaming. Replaces ElevenLabs", category: "voice", cost: 3 },
   { name: "UpTTS", desc: "Text-to-speech engine using Coqui TTS, Piper, Bark — multi-language, SSML support", category: "voice", cost: 2 },
@@ -79,6 +91,11 @@ const PRESET_TOOLS = [
   { name: "UpNaturalOrganic", desc: "Natural & organic hair care — chemical-free, plant-based, sustainable, clean beauty", category: "hair", cost: 1 },
   { name: "UpLuxury", desc: "Luxury & premium hair care — salon-quality, bio-engineered, high-end treatments", category: "hair", cost: 1 },
   { name: "UpTextured", desc: "Textured hair care — 3A-4C curl types, moisture retention, shrinkage management", category: "hair", cost: 1 },
+  // ─── Documentation ───
+  { name: "UpDataDictionary", desc: "Auto-generate complete data dictionary — tables, columns, types, relationships, ERD", category: "docs", cost: 1 },
+  { name: "UpAPIDoc", desc: "API documentation — OpenAPI/Swagger spec, endpoint reference, authentication guide", category: "docs", cost: 1 },
+  { name: "UpUserManual", desc: "User manual generation — feature guides, screenshots, FAQs, onboarding docs", category: "docs", cost: 1 },
+  { name: "UpTechManual", desc: "Technical manual — architecture, deployment, configuration, troubleshooting guide", category: "docs", cost: 1 },
   // ─── Test Pipeline ───
   { name: "UpTestPipeline", desc: "Auto-test all UpTools — connectivity, AI response, DB persistence, OpenRouter validation", category: "test", cost: 1 },
   // ─── Meta / Orchestration ───
@@ -87,7 +104,7 @@ const PRESET_TOOLS = [
   { name: "UpEndToEnd", desc: "Full E2E orchestration — calls UpQA, UpTest, UpCodeReview on every feature/function on site", category: "meta", cost: 3 },
   { name: "UpEndToEndTesting", desc: "Generate & run comprehensive E2E test suites — user flows, edge cases, regression, Playwright scripts", category: "meta", cost: 3 },
   { name: "UpSOXCompliance", desc: "SOX compliance audit — access controls, audit trails, data integrity, change management, reporting", category: "meta", cost: 3 },
-  { name: "UpAutoEvent", desc: "Auto-create ALL tools needed for any event/project — QA, test, security, marketing, docs, deployment", category: "meta", cost: 3 },
+  { name: "UpAutoEvent", desc: "Auto-create ALL tools needed for any event/project — researches market, suggests novel tools, generates everything", category: "meta", cost: 3 },
 ];
 
 const HAIR_CATEGORIES = [
@@ -102,10 +119,12 @@ const CATEGORY_LABELS: Record<string, string> = {
   revenue: "💰 Marketing & Revenue",
   quality: "🛡️ Quality & Security",
   brand: "🎨 Branding & Business",
+  app: "📱 App Creation & Payments",
   intel: "🧠 Intelligence",
   voice: "🎙️ Voice & Audio SaaS",
   geo: "🌎 Geographic & Demographic",
   hair: "💇 Hair Sub-Genre Campaigns",
+  docs: "📄 Documentation",
   test: "🧪 Testing",
   meta: "⚡ Orchestration & Meta-Tools",
 };
