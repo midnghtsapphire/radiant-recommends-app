@@ -132,6 +132,30 @@ const PRESET_TOOLS = [
   { name: "UpThreatAssess", desc: "Threat assessment engine — behavioral analysis, social media monitoring, early warning scoring, intervention protocols", category: "safety", cost: 3 },
   // ─── Test Pipeline ───
   { name: "UpTestPipeline", desc: "Auto-test all UpTools — connectivity, AI response, DB persistence, OpenRouter validation", category: "test", cost: 1 },
+  { name: "UpRegressionTesting", desc: "Regression test suite — before/after comparison, breaking change detection, auto-rollback, CI/CD hooks", category: "test", cost: 2 },
+  // ─── Consolidated Audit Tools ───
+  { name: "UpThreatSentinel", desc: "Consolidated security — weapon detection, active shooter prevention, deepfake detection, prompt injection defense", category: "consolidated", cost: 3 },
+  { name: "UpPredictiveAlpha", desc: "Consolidated finance — stock, crypto, bond, Tesla, emerging tech predictions, momentum signals", category: "consolidated", cost: 3 },
+  { name: "UpGrowthEngine", desc: "Consolidated marketing — SEO, social, content, viral loops, guerrilla, free advertising, all-in-one", category: "consolidated", cost: 3 },
+  { name: "UpTrustShield", desc: "Consolidated cybersecurity — trust scoring, content verification, prompt guard, deepfake proof", category: "consolidated", cost: 3 },
+  { name: "UpPoofEcosystem", desc: "AI agent ecosystem — create, deploy, manage multiple genie-themed agents, marketplace", category: "consolidated", cost: 3 },
+  { name: "UpLegacySecure", desc: "Digital inheritance — secure vaults, digital will, beneficiary access, dead man's switch", category: "consolidated", cost: 2 },
+  { name: "UpNeuroSync", desc: "Focus & productivity — attention tracking, flow state optimization, deep work scheduling", category: "consolidated", cost: 2 },
+  { name: "UpJurisPredict", desc: "Legal prediction — case outcomes, patent/IP strategy, regulatory risk, attorney pro se guidance", category: "consolidated", cost: 3 },
+  { name: "UpCarbonCaster", desc: "ESG arbitrage — carbon credit trading, sustainability scoring, green investment signals", category: "consolidated", cost: 2 },
+  { name: "UpBioAudit", desc: "Bioweapon prevention — dual-use research detection, lab safety compliance, biosecurity scoring", category: "consolidated", cost: 3 },
+  // ─── Email & Drive Organizer ───
+  { name: "UpInbox", desc: "Email organizer — auto-folders by project, smart categorization, keep important/private, digital footprint", category: "organizer", cost: 2 },
+  { name: "UpUnsub", desc: "Bulk unsubscribe — detect newsletters/spam, one-click mass unsubscribe, keep bank/chime, review list", category: "organizer", cost: 2 },
+  { name: "UpSubMgr", desc: "Subscription manager — track all paid subs (Google Play, web, bank), bulk cancel, cost analysis", category: "organizer", cost: 2 },
+  { name: "UpDrive", desc: "Cloud drive organizer — Google Drive, Box, auto-folder by project, zip/archive, track moves/copies", category: "organizer", cost: 2 },
+  { name: "UpVault", desc: "Photo & video vault — organize by project/date, archive to zip, mobile sync, facial recognition", category: "organizer", cost: 2 },
+  { name: "UpZip", desc: "Archive & compression — zip folders, archive old projects, scheduled backups, version snapshots", category: "organizer", cost: 1 },
+  { name: "UpPrint", desc: "Digital footprint tracker — all online activity, social media, API usage, subscription history, court docs", category: "organizer", cost: 2 },
+  // ─── Agent & Connections ───
+  { name: "UpClaw", desc: "AI Agent Creator — Digital Ocean wrapper, deploy agents as websites/APIs in one click", category: "agent", cost: 3 },
+  { name: "UpClawSaaS", desc: "Multi-tenant SaaS agent platform — white-label, billing, user management, marketplace", category: "agent", cost: 3 },
+  { name: "UpConnect", desc: "Universal API aggregator — one login for all APIs (Stripe, Google, OpenRouter), SaaS connector hub", category: "agent", cost: 3 },
   // ─── Meta / Orchestration ───
   { name: "UpImplement", desc: "Auto-implement generated tool from repository — deploy edge function, create DB tables, wire UI", category: "meta", cost: 3 },
   { name: "UpRun", desc: "Run an implemented tool end-to-end with unit test validation — verify it works in production", category: "meta", cost: 2 },
@@ -139,6 +163,7 @@ const PRESET_TOOLS = [
   { name: "UpEndToEndTesting", desc: "Generate & run comprehensive E2E test suites — user flows, edge cases, regression, Playwright scripts", category: "meta", cost: 3 },
   { name: "UpSOXCompliance", desc: "SOX compliance audit — access controls, audit trails, data integrity, change management, reporting", category: "meta", cost: 3 },
   { name: "UpAutoEvent", desc: "Auto-create ALL tools needed for any event/project — researches market, suggests novel tools, generates everything", category: "meta", cost: 3 },
+  { name: "UpSell", desc: "Instant revenue — fastest path to $100/day via affiliate, dropship, digital products, consulting", category: "fastmoney", cost: 2 },
 ];
 
 const HAIR_CATEGORIES = [
@@ -164,6 +189,9 @@ const CATEGORY_LABELS: Record<string, string> = {
   fastmoney: "💸 Revenue & Fast Money",
   safety: "🚨 Safety & Weapon Detection",
   test: "🧪 Testing",
+  consolidated: "🔥 Consolidated Power Tools",
+  organizer: "📂 Email & Drive Organizer",
+  agent: "🤖 Agents & Connections",
   meta: "⚡ Orchestration & Meta-Tools",
 };
 
