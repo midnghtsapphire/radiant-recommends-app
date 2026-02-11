@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Analyzer from "./pages/Analyzer";
 import Recommendations from "./pages/Recommendations";
 import Marketing from "./pages/Marketing";
+import MarketingDashboard from "./pages/MarketingDashboard";
 import Auth from "./pages/Auth";
 import SavedAnalyses from "./pages/SavedAnalyses";
 import Premium from "./pages/Premium";
@@ -29,6 +30,7 @@ const App = () => (
               <Route path="/analyzer" element={<Analyzer />} />
               <Route path="/recommendations" element={<Recommendations />} />
               <Route path="/marketing" element={<Marketing />} />
+              <Route path="/dashboard" element={<MarketingDashboard />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/saved" element={<SavedAnalyses />} />
               <Route path="/premium" element={<Premium />} />

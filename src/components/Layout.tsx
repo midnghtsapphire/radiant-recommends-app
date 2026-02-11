@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Sparkles, FlaskConical, ListChecks, Megaphone, LogIn, LogOut, History, Crown } from "lucide-react";
+import { Sparkles, FlaskConical, ListChecks, Megaphone, LogIn, LogOut, History, Crown, BarChart3 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 const navItems = [
@@ -8,6 +8,7 @@ const navItems = [
   { path: "/analyzer", label: "Analyzer", icon: FlaskConical },
   { path: "/recommendations", label: "Picks", icon: ListChecks },
   { path: "/marketing", label: "Marketing", icon: Megaphone },
+  { path: "/dashboard", label: "Dashboard", icon: BarChart3 },
 ];
 
 export default function Layout({ children }: { children: React.ReactNode }) {
