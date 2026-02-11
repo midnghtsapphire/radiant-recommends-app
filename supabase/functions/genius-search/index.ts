@@ -7,7 +7,7 @@ const corsHeaders = {
 interface SearchRequest {
   query: string;
   domain: "general" | "patent" | "legal" | "science" | "code" | "marketing" | "invention";
-  provider: "lovable" | "openrouter" | "perplexity";
+  provider: "lovable" | "perplexity";
   model?: string;
   depth?: "quick" | "deep";
 }
@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
         version: "1.0.0",
         description: "Multi-domain AI search tool channeling genius methodologies (Aristotle, Tesla, Da Vinci, Curie, Plato, Mozart, Picasso, Beethoven). Supports patent, legal, science, code, marketing, and invention research.",
         domains: Object.keys(DOMAIN_PROMPTS),
-        providers: ["lovable", "openrouter", "perplexity"],
+        providers: ["lovable", "perplexity"],
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
@@ -66,20 +66,6 @@ Deno.serve(async (req) => {
       if (!resp.ok) throw new Error(`Perplexity [${resp.status}]: ${await resp.text()}`);
       const data = await resp.json();
       result = data.choices?.[0]?.message?.content || "No response";
-    } else if (body.provider === "openrouter") {
-      const apiKey = Deno.env.get("OPENROUTER_API_KEY");
-      if (!apiKey) throw new Error("OPENROUTER_API_KEY not configured");
-      const resp = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json", "HTTP-Referer": "https://lovable.dev" },
-        body: JSON.stringify({
-          model: body.model || "openrouter/free",
-          messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
-        }),
-      });
-      if (!resp.ok) throw new Error(`OpenRouter [${resp.status}]: ${await resp.text()}`);
-      const data = await resp.json();
-      result = data.choices?.[0]?.message?.content || "No response";
     } else {
       const lovableKey = Deno.env.get("LOVABLE_API_KEY");
       if (!lovableKey) throw new Error("LOVABLE_API_KEY not configured");
@@ -87,7 +73,7 @@ Deno.serve(async (req) => {
         method: "POST",
         headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...(body.model ? { model: body.model } : {}),
+          model: body.model || "google/gemini-3-flash-preview",
           messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
         }),
       });
