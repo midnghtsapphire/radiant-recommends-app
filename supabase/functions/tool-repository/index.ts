@@ -13,7 +13,7 @@ const OPENROUTER_MODELS = [
 ];
 
 interface RepoRequest {
-  action: "generate" | "generate_pending" | "list" | "get" | "mark_implemented" | "batch_generate" | "auto_event" | "suggest_tools" | "audit" | "rename";
+  action: "generate" | "generate_pending" | "list" | "get" | "mark_implemented" | "batch_generate" | "auto_event" | "suggest_tools" | "audit" | "rename" | "retry" | "retry_all";
   tool_name?: string;
   tool_names?: string[];
   event_name?: string;
@@ -22,57 +22,60 @@ interface RepoRequest {
   repo_id?: string;
 }
 
-async function callOpenRouter(prompt: string, model?: string): Promise<string> {
+// UpRetry: OpenRouter 3x (cycling models) → Gemini fallback. Automated resilience.
+async function upRetry(prompt: string, maxRetries = 3): Promise<{ content: string; model: string; attempts: number }> {
   const apiKey = Deno.env.get("OPENROUTER_API_KEY");
-  if (!apiKey) throw new Error("OPENROUTER_API_KEY not set");
-  
-  // Try models with fallback on 429
-  const modelsToTry = model ? [model, ...OPENROUTER_MODELS] : [...OPENROUTER_MODELS];
-  const uniqueModels = [...new Set(modelsToTry)];
-  
-  for (const selectedModel of uniqueModels) {
-    const resp = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://lovable.dev",
-      },
-      body: JSON.stringify({
-        model: selectedModel,
-        messages: [{ role: "user", content: prompt }],
-        max_tokens: 8000,
-      }),
-    });
-    
-    if (resp.status === 429) {
-      console.log(`[REPO] Model ${selectedModel} rate-limited, trying next...`);
-      continue;
+  let attempts = 0;
+
+  // Phase 1: Try OpenRouter models up to maxRetries times
+  if (apiKey) {
+    for (let i = 0; i < maxRetries; i++) {
+      const model = OPENROUTER_MODELS[i % OPENROUTER_MODELS.length];
+      attempts++;
+      try {
+        console.log(`[UpRetry] Attempt ${attempts}/${maxRetries} with ${model}`);
+        const resp = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://lovable.dev",
+          },
+          body: JSON.stringify({ model, messages: [{ role: "user", content: prompt }], max_tokens: 8000 }),
+        });
+        if (resp.status === 429) { console.log(`[UpRetry] ${model} rate-limited, cycling...`); continue; }
+        if (!resp.ok) { console.log(`[UpRetry] ${model} error ${resp.status}, cycling...`); continue; }
+        const data = await resp.json();
+        const content = data.choices?.[0]?.message?.content || "";
+        if (content) return { content, model, attempts };
+        console.log(`[UpRetry] ${model} returned empty, cycling...`);
+      } catch (e) {
+        console.log(`[UpRetry] ${model} threw: ${e}`);
+      }
     }
-    if (!resp.ok) throw new Error(`OpenRouter [${resp.status}]: ${await resp.text()}`);
-    const data = await resp.json();
-    const content = data.choices?.[0]?.message?.content || "";
-    if (content) return content;
   }
-  
-  // All models exhausted — try Lovable AI as ultimate fallback
+
+  // Phase 2: Gemini fallback (always works if LOVABLE_API_KEY set)
   const lovableKey = Deno.env.get("LOVABLE_API_KEY");
-  if (lovableKey) {
-    console.log("[REPO] All OpenRouter models exhausted, falling back to Lovable AI");
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [{ role: "user", content: prompt }],
-      }),
-    });
-    if (!resp.ok) throw new Error(`Lovable AI fallback failed [${resp.status}]`);
-    const data = await resp.json();
-    return data.choices?.[0]?.message?.content || "";
-  }
-  
-  throw new Error("All AI models rate-limited. Please retry in a few minutes.");
+  if (!lovableKey) throw new Error("All OpenRouter attempts failed and no LOVABLE_API_KEY for fallback");
+  attempts++;
+  console.log(`[UpRetry] All OpenRouter failed. Falling back to Gemini (attempt ${attempts})`);
+  const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ model: "google/gemini-3-flash-preview", messages: [{ role: "user", content: prompt }] }),
+  });
+  if (!resp.ok) throw new Error(`Gemini fallback failed [${resp.status}]`);
+  const data = await resp.json();
+  const content = data.choices?.[0]?.message?.content || "";
+  if (!content) throw new Error("Gemini returned empty");
+  return { content, model: "gemini-3-flash", attempts };
+}
+
+// Legacy wrapper for existing code
+async function callOpenRouter(prompt: string, model?: string): Promise<string> {
+  const result = await upRetry(prompt);
+  return result.content;
 }
 
 function parseJSON(text: string): any {
@@ -393,6 +396,104 @@ JSON array: [{"name":"UpX","description":"string","action":"keep|merge|rename|ne
       });
     }
 
+    // ─── RETRY: UpRetry for a single raw/failed tool ───
+    if (body.action === "retry" && body.repo_id) {
+      const { data: tool } = await supabaseAdmin.from("tool_repository").select("*").eq("id", body.repo_id).single();
+      if (!tool) throw new Error("Tool not found");
+      if (!["raw", "failed", "pending", "retrying", "generating"].includes(tool.status)) {
+        return json({ message: `Tool ${tool.tool_name} is already ${tool.status}, skip retry`, status: tool.status });
+      }
+      await supabaseAdmin.from("tool_repository").update({ status: "retrying" }).eq("id", body.repo_id);
+      const desc = tool.blueprint?.description || tool.tool_name;
+      const start = Date.now();
+
+      const megaPrompt = `Senior architect: generate production-ready assets for "${tool.tool_name}".
+Purpose: ${desc}
+Project: ${tool.event_name || "mega-suite-2026"}. Domain: SaaS, marketing, automation, AI tools.
+
+Return ONE JSON object with keys: data_dictionary, db_migration_sql, roadmap, blueprint, project_plan, api_spec, source_code (TypeScript Deno.serve()), master_prompt, readme.
+db_migration_sql must be runnable PostgreSQL with RLS. All tables need user_id UUID NOT NULL.`;
+
+      const { content: raw, model: usedModel, attempts } = await upRetry(megaPrompt);
+      const parsed = parseJSON(raw);
+
+      if (parsed) {
+        await supabaseAdmin.from("tool_repository").update({
+          status: "ready",
+          data_dictionary: parsed.data_dictionary || null,
+          db_schema: JSON.stringify(parsed.data_dictionary?.tables || [], null, 2),
+          db_migration_sql: parsed.db_migration_sql || null,
+          roadmap: parsed.roadmap || null,
+          blueprint: parsed.blueprint || null,
+          project_plan: parsed.project_plan || null,
+          source_code: parsed.source_code || null,
+          api_spec: parsed.api_spec || null,
+          master_prompt: parsed.master_prompt || null,
+          readme: parsed.readme || null,
+          model_used: usedModel,
+          generation_duration_ms: Date.now() - start,
+          updated_at: new Date().toISOString(),
+        }).eq("id", body.repo_id);
+        return json({ id: body.repo_id, tool_name: tool.tool_name, status: "ready", model: usedModel, attempts, duration_ms: Date.now() - start, assets: Object.keys(parsed) });
+      } else {
+        await supabaseAdmin.from("tool_repository").update({
+          status: "raw", source_code: raw, model_used: usedModel,
+          generation_duration_ms: Date.now() - start, updated_at: new Date().toISOString(),
+        }).eq("id", body.repo_id);
+        return json({ id: body.repo_id, tool_name: tool.tool_name, status: "raw", model: usedModel, attempts, duration_ms: Date.now() - start });
+      }
+    }
+
+    // ─── RETRY ALL: UpRetry for all raw/failed tools ───
+    if (body.action === "retry_all") {
+      const { data: failedTools } = await supabaseAdmin
+        .from("tool_repository")
+        .select("id, tool_name, status, blueprint, event_name")
+        .in("status", ["raw", "failed"])
+        .order("created_at", { ascending: true })
+        .limit(10);
+      if (!failedTools?.length) return json({ message: "No raw/failed tools to retry", retried: 0 });
+
+      const results = [];
+      for (const tool of failedTools) {
+        try {
+          await supabaseAdmin.from("tool_repository").update({ status: "retrying" }).eq("id", tool.id);
+          const desc = tool.blueprint?.description || tool.tool_name;
+          const start = Date.now();
+          const megaPrompt = `Senior architect: generate production-ready assets for "${tool.tool_name}".
+Purpose: ${desc}
+Project: ${tool.event_name || "mega-suite-2026"}. Domain: SaaS, marketing, automation, AI tools.
+
+Return ONE JSON object with keys: data_dictionary, db_migration_sql, roadmap, blueprint, project_plan, api_spec, source_code (TypeScript Deno.serve()), master_prompt, readme.`;
+
+          const { content: raw, model: usedModel, attempts } = await upRetry(megaPrompt);
+          const parsed = parseJSON(raw);
+          if (parsed) {
+            await supabaseAdmin.from("tool_repository").update({
+              status: "ready", data_dictionary: parsed.data_dictionary || null,
+              db_schema: JSON.stringify(parsed.data_dictionary?.tables || [], null, 2),
+              db_migration_sql: parsed.db_migration_sql || null, roadmap: parsed.roadmap || null,
+              blueprint: parsed.blueprint || null, project_plan: parsed.project_plan || null,
+              source_code: parsed.source_code || null, api_spec: parsed.api_spec || null,
+              master_prompt: parsed.master_prompt || null, readme: parsed.readme || null,
+              model_used: usedModel, generation_duration_ms: Date.now() - start, updated_at: new Date().toISOString(),
+            }).eq("id", tool.id);
+            results.push({ tool_name: tool.tool_name, status: "ready", model: usedModel, attempts, duration_ms: Date.now() - start });
+          } else {
+            await supabaseAdmin.from("tool_repository").update({
+              status: "raw", source_code: raw, model_used: usedModel,
+              generation_duration_ms: Date.now() - start, updated_at: new Date().toISOString(),
+            }).eq("id", tool.id);
+            results.push({ tool_name: tool.tool_name, status: "raw", model: usedModel, attempts, duration_ms: Date.now() - start });
+          }
+        } catch (e: any) {
+          await supabaseAdmin.from("tool_repository").update({ status: "failed", source_code: e.message }).eq("id", tool.id);
+          results.push({ tool_name: tool.tool_name, status: "failed", error: e.message });
+        }
+      }
+      return json({ retried: results.length, results });
+    }
+
     throw new Error("Invalid action");
   } catch (e: any) {
     console.error("tool-repository error:", e);
@@ -437,29 +538,8 @@ Return ONE JSON object with these keys:
 - master_prompt: System prompt for this tool's AI behavior.
 - readme: README.md with setup, API docs, examples.`;
 
-    // Use Lovable AI (Gemini Flash) for speed — OpenRouter free models too slow
-    let raw: string;
-    const lovableKey = Deno.env.get("LOVABLE_API_KEY");
-    if (lovableKey) {
-      const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
-          messages: [{ role: "user", content: megaPrompt }],
-        }),
-      });
-      if (!resp.ok) {
-        console.log(`[REPO] Lovable AI failed [${resp.status}], falling back to OpenRouter`);
-        raw = await callOpenRouter(megaPrompt, OPENROUTER_MODELS[0]);
-      } else {
-        const data = await resp.json();
-        raw = data.choices?.[0]?.message?.content || "";
-        if (!raw) raw = await callOpenRouter(megaPrompt, OPENROUTER_MODELS[0]);
-      }
-    } else {
-      raw = await callOpenRouter(megaPrompt, OPENROUTER_MODELS[0]);
-    }
+    // Use UpRetry: OpenRouter 3x → Gemini fallback
+    const { content: raw, model: usedModel } = await upRetry(megaPrompt);
     const parsed = parseJSON(raw);
 
     if (parsed) {
@@ -477,7 +557,7 @@ Return ONE JSON object with these keys:
           api_spec: parsed.api_spec || null,
           master_prompt: parsed.master_prompt || null,
           readme: parsed.readme || null,
-          model_used: OPENROUTER_MODELS[0],
+          model_used: usedModel,
           generation_duration_ms: Date.now() - start,
           updated_at: new Date().toISOString(),
         })
@@ -491,7 +571,7 @@ Return ONE JSON object with these keys:
         .update({
           status: "raw",
           source_code: raw,
-          model_used: OPENROUTER_MODELS[0],
+          model_used: usedModel,
           generation_duration_ms: Date.now() - start,
           updated_at: new Date().toISOString(),
         })
@@ -525,23 +605,7 @@ Project: ${eventName}. Domain: SaaS, marketing, automation, AI tools.
 Return ONE JSON object with keys: data_dictionary, db_migration_sql, roadmap, blueprint, project_plan, api_spec, source_code (TypeScript Deno.serve()), master_prompt, readme.
 db_migration_sql must be runnable PostgreSQL with RLS. All tables need user_id UUID NOT NULL.`;
 
-  let raw: string;
-  const lovableKey = Deno.env.get("LOVABLE_API_KEY");
-  if (lovableKey) {
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model: "google/gemini-3-flash-preview", messages: [{ role: "user", content: megaPrompt }] }),
-    });
-    if (resp.ok) {
-      const data = await resp.json();
-      raw = data.choices?.[0]?.message?.content || "";
-    } else {
-      raw = await callOpenRouter(megaPrompt, OPENROUTER_MODELS[0]);
-    }
-  } else {
-    raw = await callOpenRouter(megaPrompt, OPENROUTER_MODELS[0]);
-  }
+  const { content: raw, model: usedModel } = await upRetry(megaPrompt);
 
   const parsed = parseJSON(raw);
   if (parsed) {
@@ -557,14 +621,14 @@ db_migration_sql must be runnable PostgreSQL with RLS. All tables need user_id U
       api_spec: parsed.api_spec || null,
       master_prompt: parsed.master_prompt || null,
       readme: parsed.readme || null,
-      model_used: "gemini-3-flash",
+      model_used: usedModel,
       generation_duration_ms: Date.now() - start,
       updated_at: new Date().toISOString(),
     }).eq("id", recordId);
     return { id: recordId, tool_name: toolName, status: "ready", duration_ms: Date.now() - start, assets: Object.keys(parsed) };
   } else {
     await supabase.from("tool_repository").update({
-      status: "raw", source_code: raw, model_used: "gemini-3-flash",
+      status: "raw", source_code: raw, model_used: usedModel,
       generation_duration_ms: Date.now() - start, updated_at: new Date().toISOString(),
     }).eq("id", recordId);
     return { id: recordId, tool_name: toolName, status: "raw", duration_ms: Date.now() - start };
