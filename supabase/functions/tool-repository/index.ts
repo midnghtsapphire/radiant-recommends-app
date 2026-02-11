@@ -13,10 +13,11 @@ const OPENROUTER_MODELS = [
 ];
 
 interface RepoRequest {
-  action: "generate" | "list" | "get" | "mark_implemented" | "batch_generate";
+  action: "generate" | "list" | "get" | "mark_implemented" | "batch_generate" | "auto_event" | "suggest_tools";
   tool_name?: string;
   tool_names?: string[];
   event_name?: string;
+  event_type?: string; // "project" | "website" | "campaign"
   tool_description?: string;
   repo_id?: string;
 }
@@ -117,6 +118,76 @@ Deno.serve(async (req) => {
         results.push({ tool_name: name, status: r.status, id: r.id });
       }
       return json({ batch: results, generated: results.length });
+    }
+
+    // ─── SUGGEST TOOLS FOR EVENT ───
+    if (body.action === "suggest_tools") {
+      const eventName = body.event_name || "haircare-app";
+      const eventType = body.event_type || "project";
+      const suggestPrompt = `You are a senior software architect. For a "${eventType}" called "${eventName}", suggest ALL tools needed to make it production-ready.
+
+Categories to cover:
+- Core features (main functionality tools)
+- QA & Testing (unit tests, E2E, code review, regression)
+- Security & Compliance (SOX, OWASP, prompt injection detection)
+- Marketing & Revenue (SEO, social media, affiliate, campaigns)
+- DevOps & Monitoring (tracing, logging, CI/CD, deployment)
+- Documentation (data dictionary, API docs, user manual)
+
+Return JSON:
+{
+  "event_name": "${eventName}",
+  "event_type": "${eventType}",
+  "suggested_tools": [
+    { "name": "UpToolName", "description": "What it does", "category": "qa|security|marketing|devops|docs|core", "priority": "critical|high|medium|low" }
+  ],
+  "total_tools": number,
+  "estimated_generation_time_minutes": number
+}`;
+      const raw = await callOpenRouter(suggestPrompt, OPENROUTER_MODELS[1]);
+      const parsed = parseJSON(raw);
+      return json(parsed || { raw, event_name: eventName });
+    }
+
+    // ─── AUTO EVENT: Generate ALL tools for an event ───
+    if (body.action === "auto_event") {
+      const eventName = body.event_name || "haircare-app";
+      const eventType = body.event_type || "project";
+
+      // Step 1: Get tool suggestions
+      const suggestPrompt = `You are a senior software architect. For a "${eventType}" called "${eventName}", list exactly the tool names needed. Return JSON array of objects with "name" and "description" fields only. Include tools for: core features, QA (UpQA, UpTest, UpCodeReview), E2E testing (UpEndToEnd, UpEndToEndTesting), security (UpSOXCompliance, UpAutoDetectionPromptInjections), implementation (UpImplement, UpRun), marketing, and monitoring. Max 15 tools.`;
+      const suggestRaw = await callOpenRouter(suggestPrompt, OPENROUTER_MODELS[1]);
+      const suggestedTools = parseJSON(suggestRaw);
+
+      if (!suggestedTools || !Array.isArray(suggestedTools)) {
+        return json({ error: "Failed to parse tool suggestions", raw: suggestRaw });
+      }
+
+      // Step 2: Generate each tool's assets
+      const results = [];
+      for (const tool of suggestedTools.slice(0, 10)) {
+        try {
+          const r = await generateToolAssets(
+            tool.name || tool.tool_name,
+            tool.description || tool.desc || "",
+            eventName,
+            userId,
+            supabase
+          );
+          results.push({ tool_name: tool.name || tool.tool_name, status: r.status, id: r.id });
+        } catch (e: any) {
+          results.push({ tool_name: tool.name || tool.tool_name, status: "failed", error: e.message });
+        }
+      }
+
+      return json({
+        event_name: eventName,
+        event_type: eventType,
+        tools_generated: results.length,
+        tools_suggested: suggestedTools.length,
+        results,
+        status: "complete",
+      });
     }
 
     throw new Error("Invalid action");
