@@ -146,6 +146,7 @@ const PRESET_TOOLS = [
   { name: "UpBioAudit", desc: "Bioweapon prevention — dual-use research detection, lab safety compliance, biosecurity scoring", category: "consolidated", cost: 3 },
   // ─── Email & Drive Organizer ───
   { name: "UpInbox", desc: "Email organizer — auto-folders by project, smart categorization, keep important/private, digital footprint", category: "organizer", cost: 2 },
+  { name: "UpMail", desc: "FOSS Resend alternative — self-hosted transactional email API, SMTP/SES, DKIM, templates, webhooks, open-source", category: "organizer", cost: 3 },
   { name: "UpUnsub", desc: "Bulk unsubscribe — detect newsletters/spam, one-click mass unsubscribe, keep bank/chime, review list", category: "organizer", cost: 2 },
   { name: "UpSubMgr", desc: "Subscription manager — track all paid subs (Google Play, web, bank), bulk cancel, cost analysis", category: "organizer", cost: 2 },
   { name: "UpDrive", desc: "Cloud drive organizer — Google Drive, Box, auto-folder by project, zip/archive, track moves/copies", category: "organizer", cost: 2 },

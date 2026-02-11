@@ -7,7 +7,7 @@ const corsHeaders = {
 interface SearchRequest {
   query: string;
   domain: "general" | "patent" | "legal" | "science" | "code" | "marketing" | "invention";
-  provider: "lovable" | "perplexity";
+  provider: "lovable" | "perplexity" | "openrouter";
   model?: string;
   depth?: "quick" | "deep";
 }
@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
         version: "1.0.0",
         description: "Multi-domain AI search tool channeling genius methodologies (Aristotle, Tesla, Da Vinci, Curie, Plato, Mozart, Picasso, Beethoven). Supports patent, legal, science, code, marketing, and invention research.",
         domains: Object.keys(DOMAIN_PROMPTS),
-        providers: ["lovable", "perplexity"],
+        providers: ["lovable", "perplexity", "openrouter"],
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
@@ -66,13 +66,27 @@ Deno.serve(async (req) => {
       if (!resp.ok) throw new Error(`Perplexity [${resp.status}]: ${await resp.text()}`);
       const data = await resp.json();
       result = data.choices?.[0]?.message?.content || "No response";
+    } else if (body.provider === "openrouter") {
+      // OpenRouter: Kimo, Dolphin, Mistral, Venice
+      const orKey = Deno.env.get("OPENROUTER_API_KEY");
+      if (!orKey) throw new Error("OPENROUTER_API_KEY not configured");
+      const selectedModel = body.model || "nousresearch/hermes-3-llama-3.1-405b";
+      const resp = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${orKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: selectedModel,
+          messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
+        }),
+      });
+      if (!resp.ok) throw new Error(`OpenRouter [${resp.status}]: ${await resp.text()}`);
+      const data = await resp.json();
+      result = data.choices?.[0]?.message?.content || "No response";
     } else {
+      // Lovable AI: Gemini + GPT-5 models
       const lovableKey = Deno.env.get("LOVABLE_API_KEY");
       if (!lovableKey) throw new Error("LOVABLE_API_KEY not configured");
-
-      // Kimo, Dolphin, Mistral, Venice route through Lovable AI gateway (same endpoint)
       const selectedModel = body.model || "google/gemini-3-flash-preview";
-
       const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },

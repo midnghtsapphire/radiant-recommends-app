@@ -17,7 +17,8 @@ const SEARCH_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/genius-sea
 const BOT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/googlieeyes-bot`;
 
 const PROVIDERS = [
-  { id: "lovable", name: "Lovable AI (Best Paid)" },
+  { id: "lovable", name: "Lovable AI (Gemini + GPT)" },
+  { id: "openrouter", name: "OpenRouter (Kimo, Dolphin, Venice)" },
   { id: "perplexity", name: "Perplexity (web search)" },
 ];
 
@@ -29,10 +30,12 @@ const MODELS_BY_PROVIDER: Record<string, { id: string; name: string }[]> = {
     { id: "openai/gpt-5", name: "GPT-5" },
     { id: "openai/gpt-5-mini", name: "GPT-5 Mini" },
     { id: "openai/gpt-5.2", name: "GPT-5.2 (Latest)" },
+  ],
+  openrouter: [
     { id: "nousresearch/hermes-3-llama-3.1-405b", name: "Kimo (Hermes 405B)" },
     { id: "cognitivecomputations/dolphin-llama-3.1-8b", name: "Dolphin 8B" },
     { id: "mistralai/mistral-large-latest", name: "Mistral Large" },
-    { id: "venice-ai/venice-uncensored", name: "Venice Uncensored" },
+    { id: "qwen/qwen-2.5-72b-instruct", name: "Qwen 2.5 72B" },
   ],
   perplexity: [
     { id: "sonar", name: "Sonar (default)" },
@@ -207,7 +210,7 @@ export default function GeniusToolsTab() {
                   {DOMAINS.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
                 </SelectContent>
               </Select>
-              <Select value={searchProvider} onValueChange={(v) => { setSearchProvider(v); setSearchModel(v === "lovable" ? "google/gemini-3-flash-preview" : "sonar"); }}>
+              <Select value={searchProvider} onValueChange={(v) => { setSearchProvider(v); setSearchModel(v === "lovable" ? "google/gemini-3-flash-preview" : v === "openrouter" ? "nousresearch/hermes-3-llama-3.1-405b" : "sonar"); }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {PROVIDERS.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
@@ -279,10 +282,11 @@ export default function GeniusToolsTab() {
                 value={botField}
                 onChange={e => setBotField(e.target.value)}
               />
-              <Select value={botProvider} onValueChange={(v) => { setBotProvider(v); setBotModel(v === "lovable" ? "google/gemini-3-flash-preview" : "sonar"); }}>
+              <Select value={botProvider} onValueChange={(v) => { setBotProvider(v); setBotModel(v === "lovable" ? "google/gemini-3-flash-preview" : v === "openrouter" ? "nousresearch/hermes-3-llama-3.1-405b" : "sonar"); }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="lovable">Lovable AI</SelectItem>
+                  <SelectItem value="openrouter">OpenRouter (Kimo, Dolphin)</SelectItem>
                   <SelectItem value="perplexity">Perplexity</SelectItem>
                 </SelectContent>
               </Select>

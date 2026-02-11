@@ -241,7 +241,7 @@ Return JSON:
   "total_tools": number,
   "estimated_generation_time_minutes": number
 }`;
-      const raw = await callOpenRouter(suggestPrompt, OPENROUTER_MODELS[1]);
+      const raw = await callOpenRouter(suggestPrompt);
       const parsed = parseJSON(raw);
       return json(parsed || { raw, event_name: eventName });
     }
@@ -273,7 +273,7 @@ Return JSON:
 13. TOOL SUITE: Design the COMPLETE tool suite tailored for "${eventType}". Include sub-agents and sub-genres as separate tools.
 
 Return JSON array: [{"name": "UpToolName", "description": "what it does and revenue potential", "category": "string", "order": 1, "revenue_today": "$X", "time_to_market": "today|week|month", "fail_risk": "low|medium|high", "marketing_strategy": "string"}]. Max 25 tools.`;
-      const suggestRaw = await callOpenRouter(suggestPrompt, OPENROUTER_MODELS[1]);
+      const suggestRaw = await callOpenRouter(suggestPrompt);
       const suggestedTools = parseJSON(suggestRaw);
 
       if (!suggestedTools || !Array.isArray(suggestedTools)) {
@@ -343,7 +343,7 @@ JSON array: [{"name":"UpX","description":"string","action":"keep|merge|rename|ne
         const data = await resp.json();
         raw = data.choices?.[0]?.message?.content || "";
       } else {
-        raw = await callOpenRouter(auditPrompt, OPENROUTER_MODELS[0]);
+        raw = await callOpenRouter(auditPrompt);
       }
       const parsed = parseJSON(raw);
 
