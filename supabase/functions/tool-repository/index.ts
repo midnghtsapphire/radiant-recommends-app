@@ -25,23 +25,54 @@ interface RepoRequest {
 async function callOpenRouter(prompt: string, model?: string): Promise<string> {
   const apiKey = Deno.env.get("OPENROUTER_API_KEY");
   if (!apiKey) throw new Error("OPENROUTER_API_KEY not set");
-  const selectedModel = model || OPENROUTER_MODELS[0];
-  const resp = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-      "HTTP-Referer": "https://lovable.dev",
-    },
-    body: JSON.stringify({
-      model: selectedModel,
-      messages: [{ role: "user", content: prompt }],
-      max_tokens: 8000,
-    }),
-  });
-  if (!resp.ok) throw new Error(`OpenRouter [${resp.status}]: ${await resp.text()}`);
-  const data = await resp.json();
-  return data.choices?.[0]?.message?.content || "";
+  
+  // Try models with fallback on 429
+  const modelsToTry = model ? [model, ...OPENROUTER_MODELS] : [...OPENROUTER_MODELS];
+  const uniqueModels = [...new Set(modelsToTry)];
+  
+  for (const selectedModel of uniqueModels) {
+    const resp = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://lovable.dev",
+      },
+      body: JSON.stringify({
+        model: selectedModel,
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 8000,
+      }),
+    });
+    
+    if (resp.status === 429) {
+      console.log(`[REPO] Model ${selectedModel} rate-limited, trying next...`);
+      continue;
+    }
+    if (!resp.ok) throw new Error(`OpenRouter [${resp.status}]: ${await resp.text()}`);
+    const data = await resp.json();
+    const content = data.choices?.[0]?.message?.content || "";
+    if (content) return content;
+  }
+  
+  // All models exhausted — try Lovable AI as ultimate fallback
+  const lovableKey = Deno.env.get("LOVABLE_API_KEY");
+  if (lovableKey) {
+    console.log("[REPO] All OpenRouter models exhausted, falling back to Lovable AI");
+    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [{ role: "user", content: prompt }],
+      }),
+    });
+    if (!resp.ok) throw new Error(`Lovable AI fallback failed [${resp.status}]`);
+    const data = await resp.json();
+    return data.choices?.[0]?.message?.content || "";
+  }
+  
+  throw new Error("All AI models rate-limited. Please retry in a few minutes.");
 }
 
 function parseJSON(text: string): any {
@@ -56,28 +87,38 @@ function parseJSON(text: string): any {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
     Deno.env.get("SUPABASE_ANON_KEY") ?? ""
   );
+  const supabaseAdmin = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    serviceRoleKey
+  );
 
   try {
+    let userId = "00000000-0000-0000-0000-000000000000"; // system user UUID
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("Not authenticated");
-    const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabase.auth.getUser(token);
-    if (userError || !userData.user) throw new Error("Auth failed");
-    const userId = userData.user.id;
+    if (authHeader && authHeader !== `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`) {
+      const token = authHeader.replace("Bearer ", "");
+      const { data: userData, error: userError } = await supabase.auth.getUser(token);
+      if (!userError && userData.user) {
+        userId = userData.user.id;
+      }
+    }
 
     const body: RepoRequest = await req.json();
 
     // ─── LIST ───
     if (body.action === "list") {
-      const { data, error } = await supabase
+      const db = userId === "system" ? supabaseAdmin : supabase;
+      const query = db
         .from("tool_repository")
         .select("id, tool_name, event_name, status, is_implemented, model_used, generation_duration_ms, created_at")
-        .eq("user_id", userId)
         .order("created_at", { ascending: false });
+      if (userId !== "system") query.eq("user_id", userId);
+      const { data, error } = await query;
       if (error) throw error;
       return json({ tools: data });
     }
@@ -106,7 +147,7 @@ Deno.serve(async (req) => {
 
     // ─── GENERATE ───
     if (body.action === "generate" && body.tool_name) {
-      const result = await generateToolAssets(body.tool_name, body.tool_description || "", body.event_name || "haircare-app", userId, supabase);
+      const result = await generateToolAssets(body.tool_name, body.tool_description || "", body.event_name || "haircare-app", userId, supabaseAdmin);
       return json(result);
     }
 
@@ -114,7 +155,7 @@ Deno.serve(async (req) => {
     if (body.action === "batch_generate" && body.tool_names) {
       const results = [];
       for (const name of body.tool_names.slice(0, 3)) {
-        const r = await generateToolAssets(name, "", body.event_name || "haircare-app", userId, supabase);
+        const r = await generateToolAssets(name, "", body.event_name || "haircare-app", userId, supabaseAdmin);
         results.push({ tool_name: name, status: r.status, id: r.id });
       }
       return json({ batch: results, generated: results.length });
@@ -173,33 +214,23 @@ Return JSON:
       return json(parsed || { raw, event_name: eventName });
     }
 
-    // ─── AUTO EVENT: Generate ALL tools for an event ───
+    // ─── AUTO EVENT: Suggest tools + insert as pending (no generation — avoids timeout) ───
     if (body.action === "auto_event") {
       const eventName = body.event_name || "haircare-app";
       const eventType = body.event_type || "project";
 
-      // Step 1: Get tool suggestions — research-driven with naming convention analysis
+      // Step 1: Get tool suggestions — research-driven
       const suggestPrompt = `You are a visionary architect and naming strategist. For a "${eventType}" called "${eventName}", do the following:
 
 1. RESEARCH: What existing apps, APIs, open-source projects exist in this space? What are their weaknesses?
-2. NAMING CONVENTION: Propose a systematic naming convention for all tools. Our current prefix is "Up" (e.g., UpQA, UpSEO). Evaluate if this is optimal or suggest improvements. Consider: UpGuard (security), UpScan (detection), UpShield (protection), UpProbe (testing), etc.
-3. DEEPFAKE & SECURITY: Include specialized tools for deepfake detection, deepfake testing, AI content verification, prompt injection detection, and trust scoring. Name them systematically.
-4. TOOL SUITE: Design the COMPLETE tool suite needed, tailored for "${eventType}":
+2. NAMING CONVENTION: Our prefix is "Up" (e.g., UpQA, UpSEO). Use it consistently.
+3. DEEPFAKE & SECURITY: Include deepfake detection, testing, AI content verification, prompt injection detection, trust scoring.
+4. CREATIVE DIRECTION: Think PoofAgents (genie-in-a-lamp AI agents), glassy 3D, anime GenZ themes, generational targeting (GenZ/Millennials/GenX/Boomers), catchy addictive branding. Each tool needs a memorable name.
+5. TOOL SUITE: Design the COMPLETE tool suite tailored for "${eventType}".
+6. NOVEL IDEAS: 3-5 renaissance-level tools that don't exist anywhere.
+7. COLLABORATORS: Recommend any other AI models, APIs, or services that should be in the mix.
 
-Categories to include:
-- Business Formation: UpDomain, UpSEO, UpSubscription, UpPayments, UpBusinessLicense, UpCertificates, UpSOS, UpEIN, UpInsurance
-- Marketing: UpSocialMedia, UpAffiliate, UpContent, UpYouTube, UpBlueOcean, UpChatter, UpBackLinking, UpLongTail
-- App Assembly: UpApp (final assembly), UpImplement, UpRun
-- QA & Testing: UpQA, UpTest, UpCodeReview, UpEndToEnd, UpEndToEndTesting, UpRegression, UpLoadTest
-- Security & Trust: UpDeepFakeDetect, UpDeepFakeTest, UpDeepFakeProof, UpContentVerify, UpTrustScore, UpSOXCompliance, UpPromptGuard, UpAutoDetectionPromptInjections
-- Documentation: UpDataDictionary, UpAPIDoc, UpUserManual, UpTechManual
-- Branding: UpLogo, UpFavCon, UpAltText, UpBrandKit
-- Voice & Media: UpVoice, UpTTS, UpPodcast
-- Intelligence: UpAgent, UpPatent, UpCompetitorIntel, UpDataScientist
-
-5. NOVEL IDEAS: Suggest 3-5 renaissance-level tools that DON'T EXIST anywhere — ideas from Tesla, Da Vinci, Turing applied to modern SaaS.
-
-Return JSON array: [{"name": "UpToolName", "description": "what it does and why it's better than anything on market", "category": "string", "order": 1}]. Order by implementation sequence. Max 25 tools. Include ALL deepfake/security tools.`;
+Return JSON array: [{"name": "UpToolName", "description": "what it does", "category": "string", "order": 1}]. Max 25 tools.`;
       const suggestRaw = await callOpenRouter(suggestPrompt, OPENROUTER_MODELS[1]);
       const suggestedTools = parseJSON(suggestRaw);
 
@@ -207,30 +238,28 @@ Return JSON array: [{"name": "UpToolName", "description": "what it does and why 
         return json({ error: "Failed to parse tool suggestions", raw: suggestRaw });
       }
 
-      // Step 2: Generate each tool's assets
-      const results = [];
-      for (const tool of suggestedTools.slice(0, 10)) {
-        try {
-          const r = await generateToolAssets(
-            tool.name || tool.tool_name,
-            tool.description || tool.desc || "",
-            eventName,
-            userId,
-            supabase
-          );
-          results.push({ tool_name: tool.name || tool.tool_name, status: r.status, id: r.id });
-        } catch (e: any) {
-          results.push({ tool_name: tool.name || tool.tool_name, status: "failed", error: e.message });
-        }
-      }
+      // Step 2: Insert all as "pending" rows — generation happens per-tool later
+      const rows = suggestedTools.slice(0, 25).map((tool: any, i: number) => ({
+        user_id: userId,
+        tool_name: tool.name || tool.tool_name || `UpTool${i}`,
+        event_name: eventName,
+        status: "pending",
+        blueprint: { category: tool.category, order: tool.order || i + 1, description: tool.description },
+      }));
+
+      const { data: inserted, error: insertErr } = await supabaseAdmin
+        .from("tool_repository")
+        .insert(rows)
+        .select("id, tool_name, status");
+      if (insertErr) throw insertErr;
 
       return json({
         event_name: eventName,
         event_type: eventType,
-        tools_generated: results.length,
-        tools_suggested: suggestedTools.length,
-        results,
-        status: "complete",
+        tools_queued: inserted?.length || 0,
+        tools: inserted,
+        status: "queued",
+        message: "Tools queued. Call 'generate' for each tool_name to create full assets.",
       });
     }
 
