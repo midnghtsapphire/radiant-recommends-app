@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Sparkles, FlaskConical, ListChecks, Megaphone, LogIn, LogOut, History, Crown, BarChart3, Zap } from "lucide-react";
+import { Sparkles, FlaskConical, ListChecks, Megaphone, LogIn, LogOut, History, Crown, BarChart3, Zap, Wand2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 const navItems = [
@@ -10,6 +10,7 @@ const navItems = [
   { path: "/marketing", label: "Marketing", icon: Megaphone },
   { path: "/dashboard", label: "Dashboard", icon: BarChart3 },
   { path: "/genius-pool", label: "GeniusPool", icon: Zap },
+  { path: "/logo-generator", label: "UpLogo", icon: Wand2 },
 ];
 
 export default function Layout({ children }: { children: React.ReactNode }) {

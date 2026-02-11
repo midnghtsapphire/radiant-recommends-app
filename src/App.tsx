@@ -14,6 +14,7 @@ import Auth from "./pages/Auth";
 import SavedAnalyses from "./pages/SavedAnalyses";
 import Premium from "./pages/Premium";
 import GeniusPool from "./pages/GeniusPool";
+import LogoGenerator from "./pages/LogoGenerator";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
               <Route path="/saved" element={<SavedAnalyses />} />
               <Route path="/premium" element={<Premium />} />
               <Route path="/genius-pool" element={<GeniusPool />} />
+              <Route path="/logo-generator" element={<LogoGenerator />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Layout>
