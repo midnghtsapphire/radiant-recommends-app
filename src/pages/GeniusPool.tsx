@@ -26,18 +26,36 @@ const BUDGET_TIERS = [
 const AFFILIATE_TAG = "meetaudreyeva-20";
 
 const PRESET_TOOLS = [
-  { name: "UpAffiliate", desc: "Auto-generate affiliate links, track conversions, optimize Amazon product listings" },
-  { name: "UpSEO", desc: "Deep SEO research, keyword analysis, trending search terms, alt-text generation" },
-  { name: "UpSocialMedia", desc: "Auto-post to all platforms, template generation, scheduling, engagement tracking" },
-  { name: "UpBlueOcean", desc: "Find untapped market niches, generate million-dollar sub-genre ideas with insights" },
-  { name: "UpContent", desc: "Recreate content from free YouTube/music sources, production-ready templates" },
-  { name: "UpAgent", desc: "Customer service agent, complaint handling, product Q&A, phone/email automation" },
-  { name: "UpCodeReview", desc: "Automated code review MCP, security scanning, best practices enforcement" },
-  { name: "UpFAQ", desc: "Auto-generate comprehensive FAQs for any website or product" },
-  { name: "UpDataScientist", desc: "Data analysis, trend prediction, market intelligence, performance analytics" },
-  { name: "UpPatent", desc: "Patent research, prior art analysis, patent application drafting, IP strategy" },
-  { name: "UpChatter", desc: "Social media monitoring, sentiment analysis, trending topics across all platforms" },
-  { name: "UpYouTube", desc: "YouTube channel curation, video SEO, content strategy, thumbnail optimization" },
+  // ─── Marketing & Revenue ───
+  { name: "UpAffiliate", desc: "Auto-generate affiliate links, track conversions, optimize Amazon product listings", category: "revenue" },
+  { name: "UpMarketing", desc: "Full marketing automation — campaigns, scheduling, budget allocation, ROI tracking", category: "revenue" },
+  { name: "UpBackLinking", desc: "Auto-generate backlink strategies, find guest-post targets, domain authority building", category: "revenue" },
+  { name: "UpLongTail", desc: "Long-tail keyword research, low-competition SEO phrases, search intent mapping", category: "revenue" },
+  { name: "UpSEO", desc: "Deep SEO research, keyword analysis, trending search terms, meta optimization", category: "revenue" },
+  { name: "UpSocialMedia", desc: "Auto-post to all platforms, template generation, scheduling, engagement tracking", category: "revenue" },
+  { name: "UpBlueOcean", desc: "Find untapped market niches, generate million-dollar sub-genre ideas with insights", category: "revenue" },
+  { name: "UpContent", desc: "Recreate content from free YouTube/music sources, production-ready templates", category: "revenue" },
+  { name: "UpYouTube", desc: "YouTube channel curation, video SEO, content strategy, thumbnail optimization", category: "revenue" },
+  { name: "UpChatter", desc: "Social media monitoring, sentiment analysis, trending topics across all platforms", category: "revenue" },
+  // ─── Quality & Security ───
+  { name: "UpQA", desc: "Automated QA testing — unit, integration, regression test generation for any codebase", category: "quality" },
+  { name: "UpCodeReview", desc: "Automated code review MCP, security scanning, best practices enforcement", category: "quality" },
+  { name: "UpEndToEnd", desc: "Full E2E test suite generation — user flows, edge cases, Playwright/Cypress scripts", category: "quality" },
+  { name: "UpTracing", desc: "Performance tracing, error monitoring, bottleneck detection, observability dashboards", category: "quality" },
+  { name: "UpDeepFakeDetection", desc: "Detect AI-generated images/video/audio, verify content authenticity, trust scoring", category: "quality" },
+  { name: "UpAutoDetectionPromptInjections", desc: "Detect & block prompt injection attacks, sanitize LLM inputs, security guardrails", category: "quality" },
+  // ─── Branding & Business ───
+  { name: "UpAltText", desc: "Auto-generate SEO-optimized alt text for all images, accessibility compliance", category: "brand" },
+  { name: "UpFavCon", desc: "Generate favicons, app icons, PWA icons in all required sizes from a single design", category: "brand" },
+  { name: "UpLogo", desc: "AI logo generation, brand identity kits, color palette & typography suggestions", category: "brand" },
+  { name: "UpDomain", desc: "Domain name research, availability checking, SEO-friendly naming, TLD strategy", category: "brand" },
+  { name: "UpEIN", desc: "EIN application guidance, IRS form auto-fill templates, business entity setup", category: "brand" },
+  { name: "UpSOS", desc: "Secretary of State filing guidance, LLC/Corp formation steps, state-by-state requirements", category: "brand" },
+  // ─── Intelligence ───
+  { name: "UpAgent", desc: "Customer service agent, complaint handling, product Q&A, phone/email automation", category: "intel" },
+  { name: "UpFAQ", desc: "Auto-generate comprehensive FAQs for any website or product", category: "intel" },
+  { name: "UpDataScientist", desc: "Data analysis, trend prediction, market intelligence, performance analytics", category: "intel" },
+  { name: "UpPatent", desc: "Patent research, prior art analysis, patent application drafting, IP strategy", category: "intel" },
 ];
 
 const HAIR_CATEGORIES = [
@@ -361,17 +379,25 @@ export default function GeniusPool() {
 
             <div>
               <h3 className="font-display text-lg font-semibold mb-3 flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-primary" /> Quick-Launch Presets
+                <Sparkles className="h-5 w-5 text-primary" /> Quick-Launch Presets — click to auto-run pipeline
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {PRESET_TOOLS.map((tool) => (
-                  <button key={tool.name} onClick={() => { setToolName(tool.name); setToolDesc(tool.desc); }}
-                    className="p-4 rounded-xl border border-border hover:border-primary/50 bg-card text-left transition-all hover:shadow-md">
-                    <span className="font-display font-semibold text-primary">{tool.name}</span>
-                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{tool.desc}</p>
-                  </button>
-                ))}
-              </div>
+              {(["revenue", "quality", "brand", "intel"] as const).map((cat) => (
+                <div key={cat} className="mb-4">
+                  <h4 className="text-xs uppercase tracking-wider text-muted-foreground mb-2 font-semibold">
+                    {cat === "revenue" ? "💰 Marketing & Revenue" : cat === "quality" ? "🛡️ Quality & Security" : cat === "brand" ? "🎨 Branding & Business" : "🧠 Intelligence"}
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {PRESET_TOOLS.filter((t) => t.category === cat).map((tool) => (
+                      <button key={tool.name} onClick={() => handlePipeline(tool.name, tool.desc)}
+                        disabled={pipelineLoading}
+                        className="p-3 rounded-xl border border-border hover:border-primary/50 bg-card text-left transition-all hover:shadow-md disabled:opacity-50">
+                        <span className="font-display font-semibold text-primary text-sm">{tool.name}</span>
+                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{tool.desc}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
 
             <AnimatePresence mode="wait">
