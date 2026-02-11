@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.agent-credits]
 verify_jwt = false
+
+[functions.tool-repository]
+verify_jwt = false

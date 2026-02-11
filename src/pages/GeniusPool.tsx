@@ -4,7 +4,8 @@ import {
   Zap, DollarSign, Rocket, Copy, CheckCheck, ExternalLink, Loader2,
   ShoppingCart, TrendingUp, Sparkles, Wrench, Code, Search, Megaphone,
   ChevronDown, Link2, BarChart3, Target, Clock, Eye, MousePointerClick,
-  PlayCircle, CheckCircle2, XCircle, AlertTriangle, Coins, Mic
+  PlayCircle, CheckCircle2, XCircle, AlertTriangle, Coins, Mic,
+  FolderOpen, Database, FileCode2, BookOpen
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,7 +66,7 @@ const PRESET_TOOLS = [
   { name: "UpAudioMaster", desc: "Audio processing — noise reduction, normalization, format conversion, editing", category: "voice", cost: 2 },
   { name: "UpPodcast", desc: "Auto-generate podcasts from articles — script, multi-voice TTS, intro/outro, RSS", category: "voice", cost: 3 },
   // ─── Geographic & Demographic Targeting ───
-  { name: "UpNOCO", desc: "Northern Colorado market targeting — demographics, no-humidity/dry climate hair solutions, local SEO, area economics", category: "geo", cost: 2 },
+  { name: "UpCounty", desc: "County/region market targeting — demographics, climate-specific hair solutions, local SEO, area economics, job data, crime stats", category: "geo", cost: 2 },
   { name: "UpAfro", desc: "African American hair care targeting by geography — job demographics, local economy, area-specific product recommendations, cultural relevance", category: "geo", cost: 2 },
   // ─── Hair Sub-Genre Campaigns ───
   { name: "UpDryHair", desc: "Best products for dry hair — top 10, campaigns, affiliate links, sub-niche targeting", category: "hair", cost: 1 },
@@ -140,8 +141,18 @@ export default function GeniusPool() {
   const [agentLoading, setAgentLoading] = useState<string | null>(null);
   const [agentResult, setAgentResult] = useState<any>(null);
 
+  // Repository state
+  const [repoTools, setRepoTools] = useState<any[]>([]);
+  const [repoLoading, setRepoLoading] = useState(false);
+  const [repoGenerating, setRepoGenerating] = useState<string | null>(null);
+  const [repoDetail, setRepoDetail] = useState<any>(null);
+  const [repoDetailLoading, setRepoDetailLoading] = useState(false);
+
   useEffect(() => {
-    if (user) loadCredits();
+    if (user) {
+      loadCredits();
+      loadRepo();
+    }
   }, [user]);
 
   const loadCredits = async () => {
@@ -149,6 +160,49 @@ export default function GeniusPool() {
       const { data } = await supabase.functions.invoke("agent-credits", { body: { action: "balance" } });
       if (data?.credits !== undefined) setCredits(data.credits);
     } catch { /* silent */ }
+  };
+
+  const loadRepo = async () => {
+    setRepoLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("tool-repository", { body: { action: "list" } });
+      if (error) throw error;
+      setRepoTools(data?.tools || []);
+    } catch { /* silent */ }
+    finally { setRepoLoading(false); }
+  };
+
+  const handleRepoGenerate = async (name: string, desc: string) => {
+    if (!user) { toast({ title: "Sign in required", variant: "destructive" }); return; }
+    setRepoGenerating(name);
+    try {
+      const { data, error } = await supabase.functions.invoke("tool-repository", {
+        body: { action: "generate", tool_name: name, tool_description: desc, event_name: "haircare-app" },
+      });
+      if (error) throw error;
+      toast({ title: `${name} → Repository`, description: `${data.status} • ${data.duration_ms}ms` });
+      loadRepo();
+    } catch (e: any) { toast({ title: "Generation failed", description: e.message, variant: "destructive" }); }
+    finally { setRepoGenerating(null); }
+  };
+
+  const handleRepoDetail = async (id: string) => {
+    setRepoDetailLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("tool-repository", { body: { action: "get", repo_id: id } });
+      if (error) throw error;
+      setRepoDetail(data);
+    } catch (e: any) { toast({ title: "Failed to load", description: e.message, variant: "destructive" }); }
+    finally { setRepoDetailLoading(false); }
+  };
+
+  const handleMarkImplemented = async (id: string) => {
+    try {
+      await supabase.functions.invoke("tool-repository", { body: { action: "mark_implemented", repo_id: id } });
+      toast({ title: "Marked as implemented!" });
+      loadRepo();
+      setRepoDetail(null);
+    } catch (e: any) { toast({ title: "Failed", description: e.message, variant: "destructive" }); }
   };
 
   const copyText = (text: string, id: string) => {
@@ -297,10 +351,11 @@ export default function GeniusPool() {
         </p>
 
         <Tabs defaultValue="campaigns" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="campaigns" className="gap-1 text-xs"><Rocket className="h-3.5 w-3.5" /> Campaigns</TabsTrigger>
             <TabsTrigger value="affiliate" className="gap-1 text-xs"><Link2 className="h-3.5 w-3.5" /> Affiliate</TabsTrigger>
             <TabsTrigger value="tools" className="gap-1 text-xs"><Wrench className="h-3.5 w-3.5" /> Tools</TabsTrigger>
+            <TabsTrigger value="repo" className="gap-1 text-xs"><FolderOpen className="h-3.5 w-3.5" /> Repo</TabsTrigger>
             <TabsTrigger value="agents" className="gap-1 text-xs"><Mic className="h-3.5 w-3.5" /> Agents</TabsTrigger>
             <TabsTrigger value="test" className="gap-1 text-xs"><PlayCircle className="h-3.5 w-3.5" /> Test</TabsTrigger>
           </TabsList>
@@ -658,6 +713,173 @@ export default function GeniusPool() {
                 );
               })}
             </div>
+          </TabsContent>
+
+          {/* ─── REPOSITORY TAB ─── */}
+          <TabsContent value="repo" className="space-y-6">
+            <div className="p-5 rounded-2xl border border-primary/30 bg-primary/5">
+              <h2 className="font-display text-lg font-semibold mb-2 flex items-center gap-2">
+                <FolderOpen className="h-5 w-5 text-primary" /> Tool Repository
+              </h2>
+              <p className="text-sm text-muted-foreground mb-4">
+                GeniusPool → OpenRouter generates complete production assets (SQL, code, data dictionary, roadmap, blueprint) → stored here for fast implementation.
+              </p>
+              <div className="flex gap-3 flex-wrap mb-4">
+                <Button onClick={loadRepo} disabled={repoLoading} variant="outline" className="gap-2">
+                  {repoLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />} Refresh
+                </Button>
+              </div>
+
+              {/* Send to Repo buttons */}
+              <h3 className="font-display font-semibold text-sm mb-2">Send to Repository (OpenRouter generates all assets)</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 mb-6">
+                {PRESET_TOOLS.map((tool) => (
+                  <button key={tool.name} onClick={() => handleRepoGenerate(tool.name, tool.desc)}
+                    disabled={repoGenerating === tool.name}
+                    className="p-2 rounded-lg border border-border hover:border-primary/50 bg-card text-left transition-all text-xs disabled:opacity-50">
+                    <div className="flex items-center gap-1.5">
+                      {repoGenerating === tool.name ? <Loader2 className="h-3 w-3 animate-spin text-primary" /> : <FileCode2 className="h-3 w-3 text-primary" />}
+                      <span className="font-semibold text-primary">{tool.name}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Repository Items */}
+            {repoTools.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="font-display font-semibold flex items-center gap-2">
+                  <BookOpen className="h-5 w-5 text-primary" /> Generated Assets ({repoTools.length})
+                </h3>
+                {repoTools.map((item: any) => (
+                  <div key={item.id} className={`p-4 rounded-xl border transition-all ${
+                    item.is_implemented ? "border-primary/30 bg-primary/5" :
+                    item.status === "ready" ? "border-border bg-card hover:border-primary/50 cursor-pointer" :
+                    item.status === "failed" ? "border-destructive/30 bg-destructive/5" :
+                    "border-border bg-card"
+                  }`} onClick={() => item.status === "ready" && handleRepoDetail(item.id)}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        {item.is_implemented ? <CheckCircle2 className="h-4 w-4 text-primary" /> :
+                         item.status === "ready" ? <FileCode2 className="h-4 w-4 text-primary" /> :
+                         item.status === "failed" ? <XCircle className="h-4 w-4 text-destructive" /> :
+                         <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                        <div>
+                          <span className="font-display font-semibold text-sm">{item.tool_name}</span>
+                          <span className="text-xs text-muted-foreground ml-2">{item.event_name}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span>{item.model_used}</span>
+                        {item.generation_duration_ms && <span>{(item.generation_duration_ms / 1000).toFixed(1)}s</span>}
+                        <span className={`px-2 py-0.5 rounded-full ${
+                          item.is_implemented ? "bg-primary/20 text-primary" :
+                          item.status === "ready" ? "bg-muted" : "bg-destructive/20 text-destructive"
+                        }`}>{item.is_implemented ? "implemented" : item.status}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Detail View */}
+            <AnimatePresence mode="wait">
+              {repoDetail && (
+                <motion.div key="repo-detail" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
+                  <div className="p-4 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-between">
+                    <div>
+                      <h3 className="font-display text-lg font-semibold">{repoDetail.tool_name}</h3>
+                      <p className="text-xs text-muted-foreground">{repoDetail.event_name} • {repoDetail.model_used}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => setRepoDetail(null)}>Close</Button>
+                      {!repoDetail.is_implemented && (
+                        <Button size="sm" onClick={() => handleMarkImplemented(repoDetail.id)} className="gap-1">
+                          <CheckCircle2 className="h-3.5 w-3.5" /> Mark Implemented
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* SQL Migration */}
+                  {repoDetail.db_migration_sql && (
+                    <div className="rounded-2xl border border-border/50 bg-card overflow-hidden">
+                      <div className="p-3 flex items-center justify-between border-b border-border/50">
+                        <span className="font-semibold text-sm flex items-center gap-2"><Database className="h-4 w-4 text-primary" /> DB Migration SQL</span>
+                        <CopyBtn text={repoDetail.db_migration_sql} id="sql" />
+                      </div>
+                      <pre className="text-xs text-muted-foreground whitespace-pre-wrap overflow-auto max-h-64 p-3">{repoDetail.db_migration_sql}</pre>
+                    </div>
+                  )}
+
+                  {/* Source Code */}
+                  {repoDetail.source_code && (
+                    <div className="rounded-2xl border border-border/50 bg-card overflow-hidden">
+                      <div className="p-3 flex items-center justify-between border-b border-border/50">
+                        <span className="font-semibold text-sm flex items-center gap-2"><FileCode2 className="h-4 w-4 text-primary" /> Source Code</span>
+                        <CopyBtn text={repoDetail.source_code} id="code" />
+                      </div>
+                      <pre className="text-xs text-muted-foreground whitespace-pre-wrap overflow-auto max-h-96 p-3">{repoDetail.source_code}</pre>
+                    </div>
+                  )}
+
+                  {/* Data Dictionary */}
+                  {repoDetail.data_dictionary && (
+                    <div className="rounded-2xl border border-border/50 bg-card overflow-hidden">
+                      <div className="p-3 flex items-center justify-between border-b border-border/50">
+                        <span className="font-semibold text-sm flex items-center gap-2"><BookOpen className="h-4 w-4 text-primary" /> Data Dictionary</span>
+                        <CopyBtn text={JSON.stringify(repoDetail.data_dictionary, null, 2)} id="dict" />
+                      </div>
+                      <pre className="text-xs text-muted-foreground whitespace-pre-wrap overflow-auto max-h-64 p-3">{JSON.stringify(repoDetail.data_dictionary, null, 2)}</pre>
+                    </div>
+                  )}
+
+                  {/* Roadmap */}
+                  {repoDetail.roadmap && (
+                    <div className="rounded-2xl border border-border/50 bg-card overflow-hidden">
+                      <div className="p-3 border-b border-border/50">
+                        <span className="font-semibold text-sm flex items-center gap-2"><Target className="h-4 w-4 text-primary" /> Roadmap</span>
+                      </div>
+                      <pre className="text-xs text-muted-foreground whitespace-pre-wrap overflow-auto max-h-64 p-3">{JSON.stringify(repoDetail.roadmap, null, 2)}</pre>
+                    </div>
+                  )}
+
+                  {/* Blueprint */}
+                  {repoDetail.blueprint && (
+                    <div className="rounded-2xl border border-border/50 bg-card overflow-hidden">
+                      <div className="p-3 border-b border-border/50">
+                        <span className="font-semibold text-sm flex items-center gap-2"><Code className="h-4 w-4 text-primary" /> Blueprint</span>
+                      </div>
+                      <pre className="text-xs text-muted-foreground whitespace-pre-wrap overflow-auto max-h-64 p-3">{JSON.stringify(repoDetail.blueprint, null, 2)}</pre>
+                    </div>
+                  )}
+
+                  {/* Master Prompt */}
+                  {repoDetail.master_prompt && (
+                    <div className="rounded-2xl border border-border/50 bg-card overflow-hidden">
+                      <div className="p-3 flex items-center justify-between border-b border-border/50">
+                        <span className="font-semibold text-sm flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" /> Master Prompt</span>
+                        <CopyBtn text={repoDetail.master_prompt} id="prompt" />
+                      </div>
+                      <pre className="text-xs text-muted-foreground whitespace-pre-wrap overflow-auto max-h-64 p-3">{repoDetail.master_prompt}</pre>
+                    </div>
+                  )}
+
+                  {/* README */}
+                  {repoDetail.readme && (
+                    <div className="rounded-2xl border border-border/50 bg-card overflow-hidden">
+                      <div className="p-3 flex items-center justify-between border-b border-border/50">
+                        <span className="font-semibold text-sm flex items-center gap-2"><BookOpen className="h-4 w-4 text-primary" /> README</span>
+                        <CopyBtn text={repoDetail.readme} id="readme" />
+                      </div>
+                      <pre className="text-xs text-muted-foreground whitespace-pre-wrap overflow-auto max-h-64 p-3">{repoDetail.readme}</pre>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </TabsContent>
         </Tabs>
       </motion.div>
