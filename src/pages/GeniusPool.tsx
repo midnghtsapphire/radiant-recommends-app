@@ -2,7 +2,8 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Zap, DollarSign, Rocket, Copy, CheckCheck, ExternalLink, Loader2,
-  ShoppingCart, TrendingUp, Sparkles, Wrench, Code, Search, Megaphone, ChevronDown
+  ShoppingCart, TrendingUp, Sparkles, Wrench, Code, Search, Megaphone,
+  ChevronDown, Link2, BarChart3, Target, Clock, Eye, MousePointerClick
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 const BUDGET_TIERS = [
+  { amount: 0, label: "FREE", desc: "Organic only • no ads" },
   { amount: 20, label: "$20", desc: "Starter • 2-3 platforms" },
   { amount: 40, label: "$40", desc: "Basic • all platforms" },
   { amount: 50, label: "$50", desc: "Growth • boosted reach" },
@@ -38,6 +40,12 @@ const PRESET_TOOLS = [
   { name: "UpYouTube", desc: "YouTube channel curation, video SEO, content strategy, thumbnail optimization" },
 ];
 
+const HAIR_CATEGORIES = [
+  "shampoo", "conditioner", "hair serum", "hair oil", "hair mask",
+  "leave-in conditioner", "heat protectant", "curl cream", "hair growth",
+  "scalp treatment", "anti-aging hair care", "hair vitamins", "biotin",
+];
+
 export default function GeniusPool() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -61,6 +69,15 @@ export default function GeniusPool() {
   const [useOpenRouter, setUseOpenRouter] = useState(true);
   const [expandedStep, setExpandedStep] = useState<number | null>(null);
 
+  // Affiliate state
+  const [affiliateLoading, setAffiliateLoading] = useState(false);
+  const [affiliateResults, setAffiliateResults] = useState<any>(null);
+  const [affiliateCategory, setAffiliateCategory] = useState("hair care");
+  const [affiliateCount, setAffiliateCount] = useState("10");
+  const [affiliateStats, setAffiliateStats] = useState<any>(null);
+  const [statsLoading, setStatsLoading] = useState(false);
+  const [targetRevenue, setTargetRevenue] = useState("1000");
+
   const copyText = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
     setCopied(id);
@@ -75,7 +92,7 @@ export default function GeniusPool() {
 
   const handleLaunch = async () => {
     if (!user) { toast({ title: "Sign in required", variant: "destructive" }); return; }
-    if (!selectedBudget || !productName) { toast({ title: "Select budget & product", variant: "destructive" }); return; }
+    if (selectedBudget === null || !productName) { toast({ title: "Select budget & product", variant: "destructive" }); return; }
     setLoading(true);
     setCampaign(null);
     try {
@@ -83,8 +100,21 @@ export default function GeniusPool() {
         body: { budget: selectedBudget, product_name: productName, product_description: productDesc, product_url: productUrl, target_audience: audience },
       });
       if (error) throw error;
+
+      // Save campaign to tracking
+      await supabase.from("campaign_tracking").insert({
+        user_id: user.id,
+        campaign_name: `${productName} - $${selectedBudget}`,
+        product_name: productName,
+        budget_cents: selectedBudget * 100,
+        is_free: selectedBudget === 0,
+        affiliate_tag: AFFILIATE_TAG,
+        platforms: data?.platforms ? Object.keys(data.platforms) : [],
+        status: "generated",
+      });
+
       setCampaign(data);
-      toast({ title: "Campaign generated!", description: `$${selectedBudget} campaign ready` });
+      toast({ title: "Campaign generated!", description: `${selectedBudget === 0 ? "Free" : `$${selectedBudget}`} campaign ready` });
     } catch (e: any) { toast({ title: "Failed", description: e.message, variant: "destructive" }); }
     finally { setLoading(false); }
   };
@@ -94,7 +124,6 @@ export default function GeniusPool() {
     const name = presetName || toolName;
     const desc = presetDesc || toolDesc;
     if (!name || !desc) { toast({ title: "Enter tool name & description", variant: "destructive" }); return; }
-
     setPipelineLoading(true);
     setPipelineResult(null);
     try {
@@ -103,9 +132,37 @@ export default function GeniusPool() {
       });
       if (error) throw error;
       setPipelineResult(data);
-      toast({ title: `${name} pipeline complete!`, description: "Research → Design → Code → Marketing done" });
+      toast({ title: `${name} pipeline complete!` });
     } catch (e: any) { toast({ title: "Pipeline failed", description: e.message, variant: "destructive" }); }
     finally { setPipelineLoading(false); }
+  };
+
+  const handleGenerateAffiliateLinks = async () => {
+    if (!user) { toast({ title: "Sign in required", variant: "destructive" }); return; }
+    setAffiliateLoading(true);
+    setAffiliateResults(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("auto-affiliate-links", {
+        body: { action: "generate", category: affiliateCategory, count: parseInt(affiliateCount) },
+      });
+      if (error) throw error;
+      setAffiliateResults(data);
+      toast({ title: `${data.generated} affiliate links created!` });
+    } catch (e: any) { toast({ title: "Failed", description: e.message, variant: "destructive" }); }
+    finally { setAffiliateLoading(false); }
+  };
+
+  const handleLoadStats = async () => {
+    if (!user) return;
+    setStatsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("auto-affiliate-links", {
+        body: { action: "stats", target_monthly_revenue: parseInt(targetRevenue) },
+      });
+      if (error) throw error;
+      setAffiliateStats(data);
+    } catch (e: any) { toast({ title: "Stats failed", description: e.message, variant: "destructive" }); }
+    finally { setStatsLoading(false); }
   };
 
   return (
@@ -116,26 +173,31 @@ export default function GeniusPool() {
           <h1 className="font-display text-3xl font-bold">GeniusPool</h1>
         </div>
         <p className="text-muted-foreground mb-6">
-          Auto-generate campaigns & build free tools — all powered by AI, no paid APIs.
+          Free & paid campaigns, auto affiliate links, and AI tool creation — all in one hub.
         </p>
 
         <Tabs defaultValue="campaigns" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="campaigns" className="gap-2"><Rocket className="h-4 w-4" /> Campaigns</TabsTrigger>
-            <TabsTrigger value="tools" className="gap-2"><Wrench className="h-4 w-4" /> Auto-Create Tools</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="campaigns" className="gap-1 text-xs sm:text-sm"><Rocket className="h-4 w-4" /> Campaigns</TabsTrigger>
+            <TabsTrigger value="affiliate" className="gap-1 text-xs sm:text-sm"><Link2 className="h-4 w-4" /> AutoAffiliate</TabsTrigger>
+            <TabsTrigger value="tools" className="gap-1 text-xs sm:text-sm"><Wrench className="h-4 w-4" /> Create Tools</TabsTrigger>
           </TabsList>
 
           {/* ─── CAMPAIGNS TAB ─── */}
           <TabsContent value="campaigns" className="space-y-6">
             <div>
               <h2 className="font-display text-lg font-semibold mb-3 flex items-center gap-2">
-                <DollarSign className="h-5 w-5 text-primary" /> Select Campaign Budget
+                <DollarSign className="h-5 w-5 text-primary" /> Select Budget (FREE available!)
               </h2>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {BUDGET_TIERS.map((tier) => (
                   <button key={tier.amount} onClick={() => setSelectedBudget(tier.amount)}
-                    className={`p-4 rounded-xl border-2 transition-all text-left ${selectedBudget === tier.amount ? "border-primary bg-primary/10 shadow-lg" : "border-border hover:border-primary/50 bg-card"}`}>
-                    <span className="font-display text-xl font-bold">{tier.label}</span>
+                    className={`p-4 rounded-xl border-2 transition-all text-left ${
+                      selectedBudget === tier.amount ? "border-primary bg-primary/10 shadow-lg"
+                      : tier.amount === 0 ? "border-accent bg-accent/10 hover:border-primary/50"
+                      : "border-border hover:border-primary/50 bg-card"
+                    }`}>
+                    <span className={`font-display text-xl font-bold ${tier.amount === 0 ? "text-accent-foreground" : ""}`}>{tier.label}</span>
                     <p className="text-xs text-muted-foreground mt-1">{tier.desc}</p>
                   </button>
                 ))}
@@ -147,8 +209,9 @@ export default function GeniusPool() {
               <Input value={productDesc} onChange={(e) => setProductDesc(e.target.value)} placeholder="Brief description (optional)" />
               <Input value={audience} onChange={(e) => setAudience(e.target.value)} placeholder="Target audience (optional)" />
             </div>
-            <Button onClick={handleLaunch} disabled={loading || !selectedBudget || !productName} className="w-full h-12 text-lg font-semibold gap-2" size="lg">
-              {loading ? <><Loader2 className="h-5 w-5 animate-spin" /> Generating...</> : <><Rocket className="h-5 w-5" /> Launch ${selectedBudget || "—"} Campaign</>}
+            <Button onClick={handleLaunch} disabled={loading || selectedBudget === null || !productName} className="w-full h-12 text-lg font-semibold gap-2" size="lg">
+              {loading ? <><Loader2 className="h-5 w-5 animate-spin" /> Generating...</>
+                : <><Rocket className="h-5 w-5" /> {selectedBudget === 0 ? "Launch FREE Campaign" : `Launch $${selectedBudget} Campaign`}</>}
             </Button>
 
             <AnimatePresence mode="wait">
@@ -164,7 +227,7 @@ export default function GeniusPool() {
                     <div key={p} className="p-5 rounded-2xl border border-border/50 bg-card">
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="font-display text-lg font-semibold">{p}</h3>
-                        <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">${d.budget || "—"}</span>
+                        <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">${d.budget || "0"}</span>
                       </div>
                       {d.caption && <div className="mb-3"><p className="text-xs text-muted-foreground mb-1">Caption</p><div className="flex gap-2 items-start p-3 rounded-lg bg-muted/30"><p className="text-sm flex-1">{d.caption}</p><CopyBtn text={d.caption} id={`c-${p}`} /></div></div>}
                       {d.hashtags && <div className="flex flex-wrap gap-1 mb-2">{(Array.isArray(d.hashtags) ? d.hashtags : []).map((h: string, i: number) => <span key={i} className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{h}</span>)}</div>}
@@ -177,7 +240,99 @@ export default function GeniusPool() {
                   {campaign.amazon_titles && <div className="p-5 rounded-2xl border border-border/50 bg-card"><h3 className="font-display text-lg font-semibold mb-3 flex items-center gap-2"><ShoppingCart className="h-5 w-5 text-primary" /> Amazon Titles</h3>{campaign.amazon_titles.map((t: string, i: number) => <div key={i} className="flex gap-2 items-start p-2 rounded-lg hover:bg-muted/30"><p className="text-sm flex-1">{t}</p><CopyBtn text={t} id={`a-${i}`} /></div>)}</div>}
                 </motion.div>
               )}
-              {campaign?.parse_error && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-8 p-5 rounded-2xl border border-border/50 bg-card"><h3 className="font-semibold mb-3">Raw Response</h3><pre className="text-xs text-muted-foreground whitespace-pre-wrap overflow-auto max-h-96">{campaign.raw_response}</pre></motion.div>}
+              {campaign?.parse_error && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-8 p-5 rounded-2xl border border-border/50 bg-card"><pre className="text-xs text-muted-foreground whitespace-pre-wrap overflow-auto max-h-96">{campaign.raw_response}</pre></motion.div>}
+            </AnimatePresence>
+          </TabsContent>
+
+          {/* ─── AUTO AFFILIATE TAB ─── */}
+          <TabsContent value="affiliate" className="space-y-6">
+            {/* Stats Dashboard */}
+            <div className="p-5 rounded-2xl border border-primary/30 bg-primary/5">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-display text-lg font-semibold flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-primary" /> Performance Dashboard
+                </h2>
+                <div className="flex items-center gap-2">
+                  <Input value={targetRevenue} onChange={(e) => setTargetRevenue(e.target.value)} placeholder="Target $/mo" className="w-28 h-8 text-xs" />
+                  <Button size="sm" variant="outline" onClick={handleLoadStats} disabled={statsLoading}>
+                    {statsLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Load Stats"}
+                  </Button>
+                </div>
+              </div>
+
+              {affiliateStats && (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <StatCard icon={Link2} label="Total Links" value={affiliateStats.total_links} />
+                  <StatCard icon={Eye} label="Views" value={affiliateStats.total_clicks} />
+                  <StatCard icon={MousePointerClick} label="Conversions" value={affiliateStats.total_conversions} />
+                  <StatCard icon={DollarSign} label="Revenue" value={`$${affiliateStats.total_revenue_dollars}`} />
+                  <StatCard icon={Target} label="Conversion Rate" value={`${affiliateStats.avg_conversion_rate}%`} />
+                  <StatCard icon={Rocket} label="Campaigns" value={`${affiliateStats.free_campaigns}F / ${affiliateStats.paid_campaigns}P`} />
+                  <StatCard icon={Clock} label="Days to Target" value={affiliateStats.projected_days_to_target} />
+                  <StatCard icon={TrendingUp} label="Probability" value={`${affiliateStats.probability_of_target}%`} />
+                </div>
+              )}
+            </div>
+
+            {/* Generate Links */}
+            <div className="p-5 rounded-2xl border border-border/50 bg-card">
+              <h2 className="font-display text-lg font-semibold mb-3 flex items-center gap-2">
+                <Link2 className="h-5 w-5 text-primary" /> AutoAffiliateLinks
+              </h2>
+              <p className="text-sm text-muted-foreground mb-4">
+                AI finds top-ranking hair products on Amazon → auto-generates your affiliate links ({AFFILIATE_TAG}) → saves & tracks.
+              </p>
+              <div className="flex gap-3 mb-4 flex-wrap">
+                <select
+                  value={affiliateCategory}
+                  onChange={(e) => setAffiliateCategory(e.target.value)}
+                  className="rounded-lg border border-border bg-card px-3 py-2 text-sm"
+                >
+                  {HAIR_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+                <Input value={affiliateCount} onChange={(e) => setAffiliateCount(e.target.value)} placeholder="Count" className="w-20" type="number" min="1" max="20" />
+                <Button onClick={handleGenerateAffiliateLinks} disabled={affiliateLoading} className="gap-2">
+                  {affiliateLoading ? <><Loader2 className="h-4 w-4 animate-spin" /> Generating...</> : <><Sparkles className="h-4 w-4" /> Generate Links</>}
+                </Button>
+              </div>
+            </div>
+
+            {/* Generated Links */}
+            <AnimatePresence mode="wait">
+              {affiliateResults && (
+                <motion.div key="affiliate" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-3">
+                  <h3 className="font-display font-semibold">{affiliateResults.generated} Links Generated</h3>
+                  {affiliateResults.products?.map((p: any, i: number) => (
+                    <div key={i} className="p-4 rounded-xl border border-border/50 bg-card">
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <h4 className="font-semibold text-sm">{p.product_name}</h4>
+                          <p className="text-xs text-muted-foreground">{p.product_category} • ~${p.estimated_price} • {p.estimated_commission_pct}% commission</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${
+                            p.ranking_score >= 80 ? "bg-primary/20 text-primary" :
+                            p.ranking_score >= 50 ? "bg-accent/20 text-accent-foreground" :
+                            "bg-muted text-muted-foreground"
+                          }`}>Score: {p.ranking_score}</span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-2">{p.why_recommended}</p>
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="text-muted-foreground">🔍 ~{p.monthly_search_volume_estimate}/mo</span>
+                        <span className="text-muted-foreground">Competition: {p.competition_level}</span>
+                      </div>
+                      {p.affiliate_url && (
+                        <div className="mt-2 flex items-center gap-2 p-2 rounded-lg bg-muted/30">
+                          <p className="text-xs font-mono flex-1 truncate">{p.affiliate_url}</p>
+                          <CopyBtn text={p.affiliate_url} id={`afl-${i}`} />
+                          <a href={p.affiliate_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground"><ExternalLink className="h-3 w-3" /></a>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </motion.div>
+              )}
             </AnimatePresence>
           </TabsContent>
 
@@ -188,7 +343,7 @@ export default function GeniusPool() {
                 <Code className="h-5 w-5 text-primary" /> Auto-Create Pipeline
               </h2>
               <p className="text-sm text-muted-foreground mb-4">
-                AI researches → designs → codes → integrates marketing. No paid APIs. Uses OpenRouter free models + Lovable AI.
+                AI researches → designs → codes → integrates marketing. No paid APIs.
               </p>
               <div className="space-y-3 mb-4">
                 <Input value={toolName} onChange={(e) => setToolName(e.target.value)} placeholder="Tool name (e.g. UpInventor)" />
@@ -196,7 +351,7 @@ export default function GeniusPool() {
                 <Input value={toolContext} onChange={(e) => setToolContext(e.target.value)} placeholder="Product/business context (optional)" />
                 <label className="flex items-center gap-2 text-sm">
                   <input type="checkbox" checked={useOpenRouter} onChange={(e) => setUseOpenRouter(e.target.checked)} className="rounded" />
-                  Use OpenRouter free models (recommended for variety)
+                  Use OpenRouter free models (recommended)
                 </label>
               </div>
               <Button onClick={() => handlePipeline()} disabled={pipelineLoading || !toolName || !toolDesc} className="w-full gap-2">
@@ -204,18 +359,14 @@ export default function GeniusPool() {
               </Button>
             </div>
 
-            {/* Preset Tools */}
             <div>
               <h3 className="font-display text-lg font-semibold mb-3 flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-primary" /> Quick-Launch Presets
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {PRESET_TOOLS.map((tool) => (
-                  <button
-                    key={tool.name}
-                    onClick={() => { setToolName(tool.name); setToolDesc(tool.desc); }}
-                    className="p-4 rounded-xl border border-border hover:border-primary/50 bg-card text-left transition-all hover:shadow-md"
-                  >
+                  <button key={tool.name} onClick={() => { setToolName(tool.name); setToolDesc(tool.desc); }}
+                    className="p-4 rounded-xl border border-border hover:border-primary/50 bg-card text-left transition-all hover:shadow-md">
                     <span className="font-display font-semibold text-primary">{tool.name}</span>
                     <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{tool.desc}</p>
                   </button>
@@ -223,7 +374,6 @@ export default function GeniusPool() {
               </div>
             </div>
 
-            {/* Pipeline Results */}
             <AnimatePresence mode="wait">
               {pipelineResult && (
                 <motion.div key="pipeline" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
@@ -233,16 +383,12 @@ export default function GeniusPool() {
                     <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
                       <span>Steps: {pipelineResult.pipeline_steps}</span>
                       <span>Status: {pipelineResult.status}</span>
-                      <span>{new Date(pipelineResult.generated_at).toLocaleString()}</span>
                     </div>
                   </div>
-
                   {pipelineResult.steps?.map((step: any, i: number) => (
                     <div key={i} className="rounded-2xl border border-border/50 bg-card overflow-hidden">
-                      <button
-                        onClick={() => setExpandedStep(expandedStep === i ? null : i)}
-                        className="w-full p-4 flex items-center justify-between text-left hover:bg-muted/30 transition-colors"
-                      >
+                      <button onClick={() => setExpandedStep(expandedStep === i ? null : i)}
+                        className="w-full p-4 flex items-center justify-between text-left hover:bg-muted/30 transition-colors">
                         <div className="flex items-center gap-3">
                           {step.step === "research" && <Search className="h-5 w-5 text-primary" />}
                           {step.step === "design" && <Code className="h-5 w-5 text-primary" />}
@@ -254,15 +400,13 @@ export default function GeniusPool() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <CopyBtn text={step.result} id={`step-${i}`} />
+                          <CopyBtn text={step.result} id={`s-${i}`} />
                           <ChevronDown className={`h-4 w-4 transition-transform ${expandedStep === i ? "rotate-180" : ""}`} />
                         </div>
                       </button>
                       {expandedStep === i && (
                         <div className="p-4 pt-0 border-t border-border/50">
-                          <pre className="text-xs text-muted-foreground whitespace-pre-wrap overflow-auto max-h-[500px] p-3 rounded-lg bg-muted/30">
-                            {step.result}
-                          </pre>
+                          <pre className="text-xs text-muted-foreground whitespace-pre-wrap overflow-auto max-h-[500px] p-3 rounded-lg bg-muted/30">{step.result}</pre>
                         </div>
                       )}
                     </div>
@@ -273,6 +417,18 @@ export default function GeniusPool() {
           </TabsContent>
         </Tabs>
       </motion.div>
+    </div>
+  );
+}
+
+function StatCard({ icon: Icon, label, value }: { icon: any; label: string; value: string | number }) {
+  return (
+    <div className="p-3 rounded-xl bg-card border border-border/50">
+      <div className="flex items-center gap-2 mb-1">
+        <Icon className="h-4 w-4 text-primary" />
+        <span className="text-xs text-muted-foreground">{label}</span>
+      </div>
+      <span className="font-display text-lg font-bold">{value}</span>
     </div>
   );
 }
