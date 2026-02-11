@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Zap, DollarSign, Rocket, Copy, CheckCheck, ExternalLink, Loader2,
   ShoppingCart, TrendingUp, Sparkles, Wrench, Code, Search, Megaphone,
-  ChevronDown, Link2, BarChart3, Target, Clock, Eye, MousePointerClick
+  ChevronDown, Link2, BarChart3, Target, Clock, Eye, MousePointerClick,
+  PlayCircle, CheckCircle2, XCircle, AlertTriangle, Coins, Mic
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,49 +28,78 @@ const AFFILIATE_TAG = "meetaudreyeva-20";
 
 const PRESET_TOOLS = [
   // ─── Marketing & Revenue ───
-  { name: "UpAffiliate", desc: "Auto-generate affiliate links, track conversions, optimize Amazon product listings", category: "revenue" },
-  { name: "UpMarketing", desc: "Full marketing automation — campaigns, scheduling, budget allocation, ROI tracking", category: "revenue" },
-  { name: "UpBackLinking", desc: "Auto-generate backlink strategies, find guest-post targets, domain authority building", category: "revenue" },
-  { name: "UpLongTail", desc: "Long-tail keyword research, low-competition SEO phrases, search intent mapping", category: "revenue" },
-  { name: "UpSEO", desc: "Deep SEO research, keyword analysis, trending search terms, meta optimization", category: "revenue" },
-  { name: "UpSocialMedia", desc: "Auto-post to all platforms, template generation, scheduling, engagement tracking", category: "revenue" },
-  { name: "UpBlueOcean", desc: "Find untapped market niches, generate million-dollar sub-genre ideas with insights", category: "revenue" },
-  { name: "UpContent", desc: "Recreate content from free YouTube/music sources, production-ready templates", category: "revenue" },
-  { name: "UpYouTube", desc: "YouTube channel curation, video SEO, content strategy, thumbnail optimization", category: "revenue" },
-  { name: "UpChatter", desc: "Social media monitoring, sentiment analysis, trending topics across all platforms", category: "revenue" },
+  { name: "UpAffiliate", desc: "Auto-generate affiliate links, track conversions, optimize Amazon product listings", category: "revenue", cost: 1 },
+  { name: "UpMarketing", desc: "Full marketing automation — campaigns, scheduling, budget allocation, ROI tracking", category: "revenue", cost: 2 },
+  { name: "UpBackLinking", desc: "Auto-generate backlink strategies, find guest-post targets, domain authority building", category: "revenue", cost: 2 },
+  { name: "UpLongTail", desc: "Long-tail keyword research, low-competition SEO phrases, search intent mapping", category: "revenue", cost: 1 },
+  { name: "UpSEO", desc: "Deep SEO research, keyword analysis, trending search terms, meta optimization", category: "revenue", cost: 1 },
+  { name: "UpSocialMedia", desc: "Auto-post to all platforms, template generation, scheduling, engagement tracking", category: "revenue", cost: 2 },
+  { name: "UpBlueOcean", desc: "Find untapped market niches, generate million-dollar sub-genre ideas with insights", category: "revenue", cost: 2 },
+  { name: "UpContent", desc: "Recreate content from free YouTube/music sources, production-ready templates", category: "revenue", cost: 2 },
+  { name: "UpYouTube", desc: "YouTube channel curation, video SEO, content strategy, thumbnail optimization", category: "revenue", cost: 2 },
+  { name: "UpChatter", desc: "Social media monitoring, sentiment analysis, trending topics across all platforms", category: "revenue", cost: 2 },
   // ─── Quality & Security ───
-  { name: "UpQA", desc: "Automated QA testing — unit, integration, regression test generation for any codebase", category: "quality" },
-  { name: "UpCodeReview", desc: "Automated code review MCP, security scanning, best practices enforcement", category: "quality" },
-  { name: "UpEndToEnd", desc: "Full E2E test suite generation — user flows, edge cases, Playwright/Cypress scripts", category: "quality" },
-  { name: "UpTracing", desc: "Performance tracing, error monitoring, bottleneck detection, observability dashboards", category: "quality" },
-  { name: "UpDeepFakeDetection", desc: "Detect AI-generated images/video/audio, verify content authenticity, trust scoring", category: "quality" },
-  { name: "UpAutoDetectionPromptInjections", desc: "Detect & block prompt injection attacks, sanitize LLM inputs, security guardrails", category: "quality" },
+  { name: "UpQA", desc: "Automated QA testing — unit, integration, regression test generation for any codebase", category: "quality", cost: 2 },
+  { name: "UpCodeReview", desc: "Automated code review MCP, security scanning, best practices enforcement", category: "quality", cost: 2 },
+  { name: "UpEndToEnd", desc: "Full E2E test suite generation — user flows, edge cases, Playwright/Cypress scripts", category: "quality", cost: 3 },
+  { name: "UpTracing", desc: "Performance tracing, error monitoring, bottleneck detection, observability dashboards", category: "quality", cost: 2 },
+  { name: "UpDeepFakeDetection", desc: "Detect AI-generated images/video/audio, verify content authenticity, trust scoring", category: "quality", cost: 3 },
+  { name: "UpAutoDetectionPromptInjections", desc: "Detect & block prompt injection attacks, sanitize LLM inputs, security guardrails", category: "quality", cost: 3 },
   // ─── Branding & Business ───
-  { name: "UpAltText", desc: "Auto-generate SEO-optimized alt text for all images, accessibility compliance", category: "brand" },
-  { name: "UpFavCon", desc: "Generate favicons, app icons, PWA icons in all required sizes from a single design", category: "brand" },
-  { name: "UpLogo", desc: "AI logo generation, brand identity kits, color palette & typography suggestions", category: "brand" },
-  { name: "UpDomain", desc: "Domain name research, availability checking, SEO-friendly naming, TLD strategy", category: "brand" },
-  { name: "UpEIN", desc: "EIN application guidance, IRS form auto-fill templates, business entity setup", category: "brand" },
-  { name: "UpSOS", desc: "Secretary of State filing guidance, LLC/Corp formation steps, state-by-state requirements", category: "brand" },
+  { name: "UpAltText", desc: "Auto-generate SEO-optimized alt text for all images, accessibility compliance", category: "brand", cost: 1 },
+  { name: "UpFavCon", desc: "Generate favicons, app icons, PWA icons in all required sizes from a single design", category: "brand", cost: 1 },
+  { name: "UpLogo", desc: "AI logo generation, brand identity kits, color palette & typography suggestions", category: "brand", cost: 2 },
+  { name: "UpDomain", desc: "Domain name research, availability checking, SEO-friendly naming, TLD strategy", category: "brand", cost: 1 },
+  { name: "UpEIN", desc: "EIN application guidance, IRS form auto-fill templates, business entity setup", category: "brand", cost: 1 },
+  { name: "UpSOS", desc: "Secretary of State filing guidance, LLC/Corp formation steps, state-by-state requirements", category: "brand", cost: 1 },
   // ─── Intelligence ───
-  { name: "UpAgent", desc: "Customer service agent, complaint handling, product Q&A, phone/email automation", category: "intel" },
-  { name: "UpFAQ", desc: "Auto-generate comprehensive FAQs for any website or product", category: "intel" },
-  { name: "UpDataScientist", desc: "Data analysis, trend prediction, market intelligence, performance analytics", category: "intel" },
-  { name: "UpPatent", desc: "Patent research, prior art analysis, patent application drafting, IP strategy", category: "intel" },
+  { name: "UpAgent", desc: "Customer service agent, complaint handling, product Q&A, phone/email automation", category: "intel", cost: 2 },
+  { name: "UpFAQ", desc: "Auto-generate comprehensive FAQs for any website or product", category: "intel", cost: 1 },
+  { name: "UpDataScientist", desc: "Data analysis, trend prediction, market intelligence, performance analytics", category: "intel", cost: 3 },
+  { name: "UpPatent", desc: "Patent research, prior art analysis, patent application drafting, IP strategy", category: "intel", cost: 3 },
   // ─── Voice & Audio SaaS ───
-  { name: "UpVoice", desc: "Open-source voice SaaS platform — TTS, STT, cloning, streaming. Replaces ElevenLabs with free models (Coqui, Piper, Bark, Whisper)", category: "voice" },
-  { name: "UpTTS", desc: "Text-to-speech engine using Coqui TTS, Piper, Bark — multi-language, multi-voice, SSML support", category: "voice" },
-  { name: "UpSTT", desc: "Speech-to-text transcription using OpenAI Whisper — real-time, batch, multi-language, speaker diarization", category: "voice" },
-  { name: "UpVoiceClone", desc: "Voice cloning from audio samples using open-source models — custom voices for branding, podcasts, marketing", category: "voice" },
-  { name: "UpAudioMaster", desc: "Audio processing pipeline — noise reduction, normalization, format conversion, podcast editing automation", category: "voice" },
-  { name: "UpPodcast", desc: "Auto-generate podcasts from blog posts/articles — script writing, multi-voice TTS, intro/outro, RSS feed", category: "voice" },
+  { name: "UpVoice", desc: "Open-source voice SaaS platform — TTS, STT, cloning, streaming. Replaces ElevenLabs", category: "voice", cost: 3 },
+  { name: "UpTTS", desc: "Text-to-speech engine using Coqui TTS, Piper, Bark — multi-language, SSML support", category: "voice", cost: 2 },
+  { name: "UpSTT", desc: "Speech-to-text transcription using Whisper — real-time, batch, multi-language", category: "voice", cost: 2 },
+  { name: "UpVoiceClone", desc: "Voice cloning from audio samples — custom voices for branding, podcasts, marketing", category: "voice", cost: 3 },
+  { name: "UpAudioMaster", desc: "Audio processing — noise reduction, normalization, format conversion, editing", category: "voice", cost: 2 },
+  { name: "UpPodcast", desc: "Auto-generate podcasts from articles — script, multi-voice TTS, intro/outro, RSS", category: "voice", cost: 3 },
+  // ─── Geographic & Demographic Targeting ───
+  { name: "UpNOCO", desc: "Northern Colorado market targeting — demographics, no-humidity/dry climate hair solutions, local SEO, area economics", category: "geo", cost: 2 },
+  { name: "UpAfro", desc: "African American hair care targeting by geography — job demographics, local economy, area-specific product recommendations, cultural relevance", category: "geo", cost: 2 },
+  // ─── Hair Sub-Genre Campaigns ───
+  { name: "UpDryHair", desc: "Best products for dry hair — top 10, campaigns, affiliate links, sub-niche targeting", category: "hair", cost: 1 },
+  { name: "UpDamagedHair", desc: "Best products for damaged hair — repair, restore, protein treatments, sub-niches", category: "hair", cost: 1 },
+  { name: "UpOilyHair", desc: "Best products for oily hair — clarifying, balancing, lightweight formulas", category: "hair", cost: 1 },
+  { name: "UpDandruff", desc: "Best dandruff solutions — medicated, natural, scalp treatments, prevention", category: "hair", cost: 1 },
+  { name: "UpNoHumidity", desc: "No-humidity & dry climate hair care — anti-static, moisture lock, desert-proof", category: "hair", cost: 1 },
+  { name: "UpCurlyHair", desc: "Curly hair care — curl definition, moisture, protective styles, CGM method", category: "hair", cost: 1 },
+  { name: "UpAntiAging", desc: "Anti-aging hair care — thinning, gray coverage, collagen-infused, scalp rejuvenation", category: "hair", cost: 1 },
+  { name: "UpNaturalOrganic", desc: "Natural & organic hair care — chemical-free, plant-based, sustainable, clean beauty", category: "hair", cost: 1 },
+  { name: "UpLuxury", desc: "Luxury & premium hair care — salon-quality, bio-engineered, high-end treatments", category: "hair", cost: 1 },
+  { name: "UpTextured", desc: "Textured hair care — 3A-4C curl types, moisture retention, shrinkage management", category: "hair", cost: 1 },
+  // ─── Test Pipeline ───
+  { name: "UpTestPipeline", desc: "Auto-test all UpTools — connectivity, AI response, DB persistence, OpenRouter validation", category: "test", cost: 1 },
 ];
 
 const HAIR_CATEGORIES = [
   "shampoo", "conditioner", "hair serum", "hair oil", "hair mask",
   "leave-in conditioner", "heat protectant", "curl cream", "hair growth",
   "scalp treatment", "anti-aging hair care", "hair vitamins", "biotin",
+  "dry hair", "damaged hair", "oily hair", "dandruff", "no humidity",
+  "curly hair", "textured hair", "natural organic", "luxury premium",
 ];
+
+const CATEGORY_LABELS: Record<string, string> = {
+  revenue: "💰 Marketing & Revenue",
+  quality: "🛡️ Quality & Security",
+  brand: "🎨 Branding & Business",
+  intel: "🧠 Intelligence",
+  voice: "🎙️ Voice & Audio SaaS",
+  geo: "🌎 Geographic & Demographic",
+  hair: "💇 Hair Sub-Genre Campaigns",
+  test: "🧪 Testing",
+};
 
 export default function GeniusPool() {
   const { user } = useAuth();
@@ -103,6 +133,24 @@ export default function GeniusPool() {
   const [statsLoading, setStatsLoading] = useState(false);
   const [targetRevenue, setTargetRevenue] = useState("1000");
 
+  // Credits & testing state
+  const [credits, setCredits] = useState<number | null>(null);
+  const [testingTool, setTestingTool] = useState<string | null>(null);
+  const [testResults, setTestResults] = useState<Record<string, any>>({});
+  const [agentLoading, setAgentLoading] = useState<string | null>(null);
+  const [agentResult, setAgentResult] = useState<any>(null);
+
+  useEffect(() => {
+    if (user) loadCredits();
+  }, [user]);
+
+  const loadCredits = async () => {
+    try {
+      const { data } = await supabase.functions.invoke("agent-credits", { body: { action: "balance" } });
+      if (data?.credits !== undefined) setCredits(data.credits);
+    } catch { /* silent */ }
+  };
+
   const copyText = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
     setCopied(id);
@@ -125,19 +173,11 @@ export default function GeniusPool() {
         body: { budget: selectedBudget, product_name: productName, product_description: productDesc, product_url: productUrl, target_audience: audience },
       });
       if (error) throw error;
-
-      // Save campaign to tracking
       await supabase.from("campaign_tracking").insert({
-        user_id: user.id,
-        campaign_name: `${productName} - $${selectedBudget}`,
-        product_name: productName,
-        budget_cents: selectedBudget * 100,
-        is_free: selectedBudget === 0,
-        affiliate_tag: AFFILIATE_TAG,
-        platforms: data?.platforms ? Object.keys(data.platforms) : [],
-        status: "generated",
+        user_id: user.id, campaign_name: `${productName} - $${selectedBudget}`, product_name: productName,
+        budget_cents: selectedBudget * 100, is_free: selectedBudget === 0, affiliate_tag: AFFILIATE_TAG,
+        platforms: data?.platforms ? Object.keys(data.platforms) : [], status: "generated",
       });
-
       setCampaign(data);
       toast({ title: "Campaign generated!", description: `${selectedBudget === 0 ? "Free" : `$${selectedBudget}`} campaign ready` });
     } catch (e: any) { toast({ title: "Failed", description: e.message, variant: "destructive" }); }
@@ -160,6 +200,43 @@ export default function GeniusPool() {
       toast({ title: `${name} pipeline complete!` });
     } catch (e: any) { toast({ title: "Pipeline failed", description: e.message, variant: "destructive" }); }
     finally { setPipelineLoading(false); }
+  };
+
+  const handleTestTool = async (toolNameToTest: string) => {
+    if (!user) { toast({ title: "Sign in required", variant: "destructive" }); return; }
+    setTestingTool(toolNameToTest);
+    try {
+      const { data, error } = await supabase.functions.invoke("test-pipeline", {
+        body: { action: "test_single", tool_name: toolNameToTest },
+      });
+      if (error) throw error;
+      setTestResults(prev => ({ ...prev, [toolNameToTest]: data }));
+      const icon = data.status === "pass" ? "✅" : data.status === "partial" ? "⚠️" : "❌";
+      toast({ title: `${icon} ${toolNameToTest}: ${data.passed}/${data.total} passed`, description: `${data.duration_ms}ms` });
+    } catch (e: any) {
+      setTestResults(prev => ({ ...prev, [toolNameToTest]: { status: "fail", error: e.message } }));
+      toast({ title: `❌ ${toolNameToTest} test failed`, description: e.message, variant: "destructive" });
+    } finally { setTestingTool(null); }
+  };
+
+  const handleBookAgent = async (tool: string) => {
+    if (!user) { toast({ title: "Sign in required", variant: "destructive" }); return; }
+    setAgentLoading(tool);
+    setAgentResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("agent-credits", {
+        body: { action: "book_agent", agent_tool: tool, request_data: { prompt: `Run ${tool} for my hair care SaaS project.` } },
+      });
+      if (error) throw error;
+      if (data?.error) {
+        toast({ title: data.error, description: `Need ${data.required} credits, have ${data.available}`, variant: "destructive" });
+      } else {
+        setAgentResult(data);
+        setCredits(data.remaining_credits);
+        toast({ title: `${tool} complete!`, description: `${data.credits_spent} credits used` });
+      }
+    } catch (e: any) { toast({ title: "Agent failed", description: e.message, variant: "destructive" }); }
+    finally { setAgentLoading(null); }
   };
 
   const handleGenerateAffiliateLinks = async () => {
@@ -190,22 +267,42 @@ export default function GeniusPool() {
     finally { setStatsLoading(false); }
   };
 
+  const TestStatusIcon = ({ name }: { name: string }) => {
+    const r = testResults[name];
+    if (testingTool === name) return <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />;
+    if (!r) return null;
+    if (r.status === "pass") return <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />;
+    if (r.status === "partial") return <AlertTriangle className="h-3.5 w-3.5 text-yellow-500" />;
+    return <XCircle className="h-3.5 w-3.5 text-red-500" />;
+  };
+
   return (
-    <div className="container mx-auto px-4 py-12 max-w-4xl">
+    <div className="container mx-auto px-4 py-12 max-w-5xl">
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-        <div className="flex items-center gap-3 mb-2">
-          <Zap className="h-7 w-7 text-primary" />
-          <h1 className="font-display text-3xl font-bold">GeniusPool</h1>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-3">
+            <Zap className="h-7 w-7 text-primary" />
+            <h1 className="font-display text-3xl font-bold">GeniusPool</h1>
+          </div>
+          {credits !== null && (
+            <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 border border-primary/30">
+              <Coins className="h-4 w-4 text-primary" />
+              <span className="font-display font-bold text-primary">{credits}</span>
+              <span className="text-xs text-muted-foreground">credits</span>
+            </div>
+          )}
         </div>
         <p className="text-muted-foreground mb-6">
-          Free & paid campaigns, auto affiliate links, and AI tool creation — all in one hub.
+          Agent SaaS hub — campaigns, affiliate, tools, testing & credits. All automated.
         </p>
 
         <Tabs defaultValue="campaigns" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="campaigns" className="gap-1 text-xs sm:text-sm"><Rocket className="h-4 w-4" /> Campaigns</TabsTrigger>
-            <TabsTrigger value="affiliate" className="gap-1 text-xs sm:text-sm"><Link2 className="h-4 w-4" /> AutoAffiliate</TabsTrigger>
-            <TabsTrigger value="tools" className="gap-1 text-xs sm:text-sm"><Wrench className="h-4 w-4" /> Create Tools</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="campaigns" className="gap-1 text-xs"><Rocket className="h-3.5 w-3.5" /> Campaigns</TabsTrigger>
+            <TabsTrigger value="affiliate" className="gap-1 text-xs"><Link2 className="h-3.5 w-3.5" /> Affiliate</TabsTrigger>
+            <TabsTrigger value="tools" className="gap-1 text-xs"><Wrench className="h-3.5 w-3.5" /> Tools</TabsTrigger>
+            <TabsTrigger value="agents" className="gap-1 text-xs"><Mic className="h-3.5 w-3.5" /> Agents</TabsTrigger>
+            <TabsTrigger value="test" className="gap-1 text-xs"><PlayCircle className="h-3.5 w-3.5" /> Test</TabsTrigger>
           </TabsList>
 
           {/* ─── CAMPAIGNS TAB ─── */}
@@ -238,7 +335,6 @@ export default function GeniusPool() {
               {loading ? <><Loader2 className="h-5 w-5 animate-spin" /> Generating...</>
                 : <><Rocket className="h-5 w-5" /> {selectedBudget === 0 ? "Launch FREE Campaign" : `Launch $${selectedBudget} Campaign`}</>}
             </Button>
-
             <AnimatePresence mode="wait">
               {campaign && !campaign.parse_error && (
                 <motion.div key="campaign" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
@@ -271,7 +367,6 @@ export default function GeniusPool() {
 
           {/* ─── AUTO AFFILIATE TAB ─── */}
           <TabsContent value="affiliate" className="space-y-6">
-            {/* Stats Dashboard */}
             <div className="p-5 rounded-2xl border border-primary/30 bg-primary/5">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-display text-lg font-semibold flex items-center gap-2">
@@ -284,7 +379,6 @@ export default function GeniusPool() {
                   </Button>
                 </div>
               </div>
-
               {affiliateStats && (
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <StatCard icon={Link2} label="Total Links" value={affiliateStats.total_links} />
@@ -298,21 +392,16 @@ export default function GeniusPool() {
                 </div>
               )}
             </div>
-
-            {/* Generate Links */}
             <div className="p-5 rounded-2xl border border-border/50 bg-card">
               <h2 className="font-display text-lg font-semibold mb-3 flex items-center gap-2">
                 <Link2 className="h-5 w-5 text-primary" /> AutoAffiliateLinks
               </h2>
               <p className="text-sm text-muted-foreground mb-4">
-                AI finds top-ranking hair products on Amazon → auto-generates your affiliate links ({AFFILIATE_TAG}) → saves & tracks.
+                AI finds top-ranking hair products → auto-generates affiliate links ({AFFILIATE_TAG}) → saves & tracks.
               </p>
               <div className="flex gap-3 mb-4 flex-wrap">
-                <select
-                  value={affiliateCategory}
-                  onChange={(e) => setAffiliateCategory(e.target.value)}
-                  className="rounded-lg border border-border bg-card px-3 py-2 text-sm"
-                >
+                <select value={affiliateCategory} onChange={(e) => setAffiliateCategory(e.target.value)}
+                  className="rounded-lg border border-border bg-card px-3 py-2 text-sm">
                   {HAIR_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
                 </select>
                 <Input value={affiliateCount} onChange={(e) => setAffiliateCount(e.target.value)} placeholder="Count" className="w-20" type="number" min="1" max="20" />
@@ -321,8 +410,6 @@ export default function GeniusPool() {
                 </Button>
               </div>
             </div>
-
-            {/* Generated Links */}
             <AnimatePresence mode="wait">
               {affiliateResults && (
                 <motion.div key="affiliate" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-3">
@@ -334,13 +421,7 @@ export default function GeniusPool() {
                           <h4 className="font-semibold text-sm">{p.product_name}</h4>
                           <p className="text-xs text-muted-foreground">{p.product_category} • ~${p.estimated_price} • {p.estimated_commission_pct}% commission</p>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${
-                            p.ranking_score >= 80 ? "bg-primary/20 text-primary" :
-                            p.ranking_score >= 50 ? "bg-accent/20 text-accent-foreground" :
-                            "bg-muted text-muted-foreground"
-                          }`}>Score: {p.ranking_score}</span>
-                        </div>
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${p.ranking_score >= 80 ? "bg-primary/20 text-primary" : p.ranking_score >= 50 ? "bg-accent/20 text-accent-foreground" : "bg-muted text-muted-foreground"}`}>Score: {p.ranking_score}</span>
                       </div>
                       <p className="text-xs text-muted-foreground mb-2">{p.why_recommended}</p>
                       <div className="flex items-center gap-2 text-xs">
@@ -368,7 +449,7 @@ export default function GeniusPool() {
                 <Code className="h-5 w-5 text-primary" /> Auto-Create Pipeline
               </h2>
               <p className="text-sm text-muted-foreground mb-4">
-                AI researches → designs → codes → integrates marketing. No paid APIs.
+                GeniusPool researches → designs → OpenRouter codes → marketing integration. All free.
               </p>
               <div className="space-y-3 mb-4">
                 <Input value={toolName} onChange={(e) => setToolName(e.target.value)} placeholder="Tool name (e.g. UpInventor)" />
@@ -386,25 +467,41 @@ export default function GeniusPool() {
 
             <div>
               <h3 className="font-display text-lg font-semibold mb-3 flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-primary" /> Quick-Launch Presets — click to auto-run pipeline
+                <Sparkles className="h-5 w-5 text-primary" /> Quick-Launch Presets
               </h3>
-              {(["revenue", "quality", "brand", "intel", "voice"] as const).map((cat) => (
-                <div key={cat} className="mb-4">
-                  <h4 className="text-xs uppercase tracking-wider text-muted-foreground mb-2 font-semibold">
-                    {cat === "revenue" ? "💰 Marketing & Revenue" : cat === "quality" ? "🛡️ Quality & Security" : cat === "brand" ? "🎨 Branding & Business" : cat === "intel" ? "🧠 Intelligence" : "🎙️ Voice & Audio SaaS"}
-                  </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {PRESET_TOOLS.filter((t) => t.category === cat).map((tool) => (
-                      <button key={tool.name} onClick={() => handlePipeline(tool.name, tool.desc)}
-                        disabled={pipelineLoading}
-                        className="p-3 rounded-xl border border-border hover:border-primary/50 bg-card text-left transition-all hover:shadow-md disabled:opacity-50">
-                        <span className="font-display font-semibold text-primary text-sm">{tool.name}</span>
-                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{tool.desc}</p>
-                      </button>
-                    ))}
+              {Object.keys(CATEGORY_LABELS).map((cat) => {
+                const tools = PRESET_TOOLS.filter((t) => t.category === cat);
+                if (!tools.length) return null;
+                return (
+                  <div key={cat} className="mb-4">
+                    <h4 className="text-xs uppercase tracking-wider text-muted-foreground mb-2 font-semibold">
+                      {CATEGORY_LABELS[cat]}
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {tools.map((tool) => (
+                        <div key={tool.name} className="p-3 rounded-xl border border-border hover:border-primary/50 bg-card transition-all hover:shadow-md flex items-start justify-between gap-2">
+                          <button onClick={() => handlePipeline(tool.name, tool.desc)} disabled={pipelineLoading}
+                            className="text-left flex-1 disabled:opacity-50">
+                            <div className="flex items-center gap-2">
+                              <span className="font-display font-semibold text-primary text-sm">{tool.name}</span>
+                              <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground">{tool.cost}cr</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{tool.desc}</p>
+                          </button>
+                          <div className="flex items-center gap-1 shrink-0 mt-1">
+                            <TestStatusIcon name={tool.name} />
+                            <button onClick={() => handleTestTool(tool.name)} disabled={!!testingTool}
+                              className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-primary disabled:opacity-50"
+                              title="Test this tool">
+                              <PlayCircle className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <AnimatePresence mode="wait">
@@ -447,6 +544,120 @@ export default function GeniusPool() {
                 </motion.div>
               )}
             </AnimatePresence>
+          </TabsContent>
+
+          {/* ─── AGENTS (Credits-based) TAB ─── */}
+          <TabsContent value="agents" className="space-y-6">
+            <div className="p-5 rounded-2xl border border-primary/30 bg-primary/5">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-display text-lg font-semibold flex items-center gap-2">
+                  <Coins className="h-5 w-5 text-primary" /> Agent SaaS — Pay with Credits
+                </h2>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-card border border-border">
+                  <Coins className="h-4 w-4 text-primary" />
+                  <span className="font-display font-bold">{credits ?? "..."}</span>
+                  <span className="text-xs text-muted-foreground">credits</span>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground mb-4">
+                Each tool costs credits. Click to book an agent session — AI runs the tool and delivers results.
+              </p>
+              {Object.keys(CATEGORY_LABELS).map((cat) => {
+                const tools = PRESET_TOOLS.filter((t) => t.category === cat);
+                if (!tools.length) return null;
+                return (
+                  <div key={cat} className="mb-4">
+                    <h4 className="text-xs uppercase tracking-wider text-muted-foreground mb-2 font-semibold">
+                      {CATEGORY_LABELS[cat]}
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                      {tools.map((tool) => (
+                        <button key={tool.name} onClick={() => handleBookAgent(tool.name)}
+                          disabled={agentLoading === tool.name || (credits !== null && credits < tool.cost)}
+                          className="p-3 rounded-xl border border-border hover:border-primary/50 bg-card text-left transition-all hover:shadow-md disabled:opacity-50">
+                          <div className="flex items-center justify-between">
+                            <span className="font-display font-semibold text-primary text-sm">{tool.name}</span>
+                            <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold">{tool.cost} cr</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{tool.desc}</p>
+                          {agentLoading === tool.name && <div className="flex items-center gap-1 mt-1 text-xs text-primary"><Loader2 className="h-3 w-3 animate-spin" /> Running...</div>}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <AnimatePresence mode="wait">
+              {agentResult && (
+                <motion.div key="agent-result" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="p-5 rounded-2xl border border-border/50 bg-card">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-display text-lg font-semibold">{agentResult.tool} Result</h3>
+                    <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">{agentResult.credits_spent} credits</span>
+                  </div>
+                  {agentResult.result?.output && (
+                    <div className="flex gap-2 items-start">
+                      <pre className="text-sm text-muted-foreground whitespace-pre-wrap overflow-auto max-h-[500px] flex-1 p-3 rounded-lg bg-muted/30">{agentResult.result.output}</pre>
+                      <CopyBtn text={agentResult.result.output} id="agent-out" />
+                    </div>
+                  )}
+                  {agentResult.result?.error && (
+                    <p className="text-sm text-destructive">{agentResult.result.error}</p>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </TabsContent>
+
+          {/* ─── TEST PIPELINE TAB ─── */}
+          <TabsContent value="test" className="space-y-6">
+            <div className="p-5 rounded-2xl border border-primary/30 bg-primary/5">
+              <h2 className="font-display text-lg font-semibold mb-2 flex items-center gap-2">
+                <PlayCircle className="h-5 w-5 text-primary" /> TestPipeline — Verify All UpTools
+              </h2>
+              <p className="text-sm text-muted-foreground mb-4">
+                Tests AI connectivity (Lovable AI + OpenRouter), DB persistence, and tool validation for each UpTool.
+              </p>
+              <div className="flex gap-3 mb-4">
+                <Button onClick={() => {
+                  PRESET_TOOLS.slice(0, 5).forEach((t) => handleTestTool(t.name));
+                }} disabled={!!testingTool} className="gap-2">
+                  <PlayCircle className="h-4 w-4" /> Test First 5
+                </Button>
+                <Button variant="outline" onClick={() => {
+                  const untested = PRESET_TOOLS.filter(t => !testResults[t.name]);
+                  if (untested.length) handleTestTool(untested[0].name);
+                }} disabled={!!testingTool} className="gap-2">
+                  <PlayCircle className="h-4 w-4" /> Test Next Untested
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              {PRESET_TOOLS.map((tool) => {
+                const r = testResults[tool.name];
+                return (
+                  <div key={tool.name} className={`p-3 rounded-xl border transition-all flex items-center justify-between ${
+                    r?.status === "pass" ? "border-green-500/30 bg-green-500/5" :
+                    r?.status === "partial" ? "border-yellow-500/30 bg-yellow-500/5" :
+                    r?.status === "fail" ? "border-red-500/30 bg-red-500/5" :
+                    "border-border bg-card"
+                  }`}>
+                    <div className="flex items-center gap-3">
+                      <TestStatusIcon name={tool.name} />
+                      <div>
+                        <span className="font-display font-semibold text-sm">{tool.name}</span>
+                        {r && <span className="text-xs text-muted-foreground ml-2">{r.passed}/{r.total} • {r.duration_ms}ms</span>}
+                      </div>
+                    </div>
+                    <Button size="sm" variant="ghost" onClick={() => handleTestTool(tool.name)} disabled={testingTool === tool.name}>
+                      {testingTool === tool.name ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PlayCircle className="h-3.5 w-3.5" />}
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
           </TabsContent>
         </Tabs>
       </motion.div>
