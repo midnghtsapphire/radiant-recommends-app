@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Sparkles, FlaskConical, ListChecks, Megaphone, LogIn, LogOut, History } from "lucide-react";
+import { Sparkles, FlaskConical, ListChecks, Megaphone, LogIn, LogOut, History, Crown } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 const navItems = [
@@ -15,8 +15,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { user, signOut } = useAuth();
 
   const allNav = user
-    ? [...navItems, { path: "/saved", label: "Saved", icon: History }]
-    : navItems;
+    ? [...navItems, { path: "/saved", label: "Saved", icon: History }, { path: "/premium", label: "Premium", icon: Crown }]
+    : [...navItems, { path: "/premium", label: "Premium", icon: Crown }];
 
   return (
     <div className="min-h-screen bg-background text-foreground font-body">
