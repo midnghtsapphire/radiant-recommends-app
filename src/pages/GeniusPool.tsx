@@ -104,6 +104,32 @@ const PRESET_TOOLS = [
   { name: "UpAPIDoc", desc: "API documentation — OpenAPI/Swagger spec, endpoint reference, authentication guide", category: "docs", cost: 1 },
   { name: "UpUserManual", desc: "User manual generation — feature guides, screenshots, FAQs, onboarding docs", category: "docs", cost: 1 },
   { name: "UpTechManual", desc: "Technical manual — architecture, deployment, configuration, troubleshooting guide", category: "docs", cost: 1 },
+  // ─── Predictive & Investment ───
+  { name: "UpPredictiveResearch", desc: "Deep predictive research engine — market trends, emerging tech, probability scoring, timeline forecasts", category: "predictive", cost: 3 },
+  { name: "UpPredictiveStock", desc: "Stock prediction algorithms — technical analysis, sentiment, momentum, sector rotation signals", category: "predictive", cost: 3 },
+  { name: "UpPredictiveBonds", desc: "Bond market prediction — yield curve analysis, credit risk, rate sensitivity, safe haven signals", category: "predictive", cost: 2 },
+  { name: "UpPredictiveCrypto", desc: "Crypto prediction — Bitcoin, Ethereum, altcoin momentum, whale tracking, DeFi yield farming signals", category: "predictive", cost: 3 },
+  { name: "UpPredictiveTesla", desc: "Tesla-specific prediction — earnings, deliveries, FSD progress, Elon factor, options flow", category: "predictive", cost: 2 },
+  { name: "UpPredictiveEconomics", desc: "Economic prediction — GDP, inflation, unemployment, Fed policy, recession probability", category: "predictive", cost: 3 },
+  { name: "UpPredictiveEmergingTech", desc: "Emerging tech prediction — AI breakthroughs, quantum, biotech, space, fusion, investment timing", category: "predictive", cost: 3 },
+  { name: "UpPredictiveCrime", desc: "Crime pattern prediction — hotspot analysis, temporal patterns, prevention strategies, community safety", category: "predictive", cost: 3 },
+  { name: "UpPredictiveSchoolSafety", desc: "School safety prediction — threat detection patterns, early warning systems, prevention protocols, community alerts", category: "predictive", cost: 3 },
+  { name: "UpPredictiveGetRich", desc: "Get-rich opportunity scoring — side hustles, arbitrage, market gaps, passive income, risk-adjusted ROI ranking", category: "predictive", cost: 2 },
+  // ─── Revenue & Fast Money ───
+  { name: "UpSell", desc: "Sales automation — upsell, cross-sell, pricing optimization, conversion funnels, A/B testing", category: "fastmoney", cost: 2 },
+  { name: "UpFastMoneyToday", desc: "Revenue-today strategies — same-day monetization, flash sales, viral launches, instant affiliate income", category: "fastmoney", cost: 2 },
+  { name: "UpIndiegogo", desc: "Indiegogo campaign creator — compelling stories, reward tiers, stretch goals, backer psychology, launch timing", category: "fastmoney", cost: 3 },
+  { name: "UpKickstarter", desc: "Kickstarter campaign optimizer — video scripts, early bird strategy, press outreach, funding milestones", category: "fastmoney", cost: 3 },
+  { name: "UpCrowdfund", desc: "Multi-platform crowdfunding — GoFundMe, Patreon, Buy Me A Coffee, donation optimization, recurring revenue", category: "fastmoney", cost: 2 },
+  { name: "UpRevenueProjector", desc: "Revenue projection engine — $100/day, $500/day, $1000/day models, time-to-market, failure probability, pivot plans", category: "fastmoney", cost: 3 },
+  { name: "UpFreeAdvertising", desc: "Zero-cost advertising mastery — guerrilla marketing, viral loops, Reddit/HN/ProductHunt launches, organic growth hacks", category: "fastmoney", cost: 1 },
+  { name: "UpPaidAdOptimizer", desc: "Paid ad ROI maximizer — Facebook/Google/TikTok ads, budget allocation, ROAS targets, creative testing", category: "fastmoney", cost: 2 },
+  // ─── Safety & Weapon Detection (UpBELL) ───
+  { name: "UpWeaponDetect", desc: "Weapon detection AI — real-time image/video analysis, firearm identification, concealed weapon detection", category: "safety", cost: 3 },
+  { name: "UpEdgeWeapon", desc: "Edge-deployed weapon detection — low-latency camera feeds, offline capability, alert system", category: "safety", cost: 3 },
+  { name: "UpEdgeActiveShooter", desc: "Active shooter detection — gunshot audio recognition, lockdown automation, first responder alerts, evacuation routing", category: "safety", cost: 3 },
+  { name: "UpBELL", desc: "UpBELL master system — Building Emergency Lockdown & Location — integrates all safety tools into unified command center", category: "safety", cost: 3 },
+  { name: "UpThreatAssess", desc: "Threat assessment engine — behavioral analysis, social media monitoring, early warning scoring, intervention protocols", category: "safety", cost: 3 },
   // ─── Test Pipeline ───
   { name: "UpTestPipeline", desc: "Auto-test all UpTools — connectivity, AI response, DB persistence, OpenRouter validation", category: "test", cost: 1 },
   // ─── Meta / Orchestration ───
@@ -134,6 +160,9 @@ const CATEGORY_LABELS: Record<string, string> = {
   geo: "🌎 Geographic & Demographic",
   hair: "💇 Hair Sub-Genre Campaigns",
   docs: "📄 Documentation",
+  predictive: "🔮 Predictive & Investment",
+  fastmoney: "💸 Revenue & Fast Money",
+  safety: "🚨 Safety & Weapon Detection",
   test: "🧪 Testing",
   meta: "⚡ Orchestration & Meta-Tools",
 };
