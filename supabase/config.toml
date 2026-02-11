@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.tool-repository]
 verify_jwt = false
+
+[functions.logo-generator]
+verify_jwt = false
