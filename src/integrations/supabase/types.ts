@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      auto_affiliate_links: {
+        Row: {
+          affiliate_tag: string | null
+          affiliate_url: string
+          amazon_url: string | null
+          clicks: number | null
+          conversions: number | null
+          created_at: string
+          emailed: boolean | null
+          emailed_at: string | null
+          estimated_commission_pct: number | null
+          id: string
+          product_category: string | null
+          product_name: string
+          ranking_score: number | null
+          revenue_cents: number | null
+          user_id: string
+        }
+        Insert: {
+          affiliate_tag?: string | null
+          affiliate_url: string
+          amazon_url?: string | null
+          clicks?: number | null
+          conversions?: number | null
+          created_at?: string
+          emailed?: boolean | null
+          emailed_at?: string | null
+          estimated_commission_pct?: number | null
+          id?: string
+          product_category?: string | null
+          product_name: string
+          ranking_score?: number | null
+          revenue_cents?: number | null
+          user_id: string
+        }
+        Update: {
+          affiliate_tag?: string | null
+          affiliate_url?: string
+          amazon_url?: string | null
+          clicks?: number | null
+          conversions?: number | null
+          created_at?: string
+          emailed?: boolean | null
+          emailed_at?: string | null
+          estimated_commission_pct?: number | null
+          id?: string
+          product_category?: string | null
+          product_name?: string
+          ranking_score?: number | null
+          revenue_cents?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       campaign_posts: {
         Row: {
           caption: string
@@ -75,6 +129,75 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      campaign_tracking: {
+        Row: {
+          affiliate_links: Json | null
+          affiliate_tag: string | null
+          budget_cents: number
+          campaign_name: string
+          clicks: number | null
+          conversions: number | null
+          created_at: string
+          days_to_target: number | null
+          id: string
+          is_free: boolean
+          platforms: Json | null
+          probability_score: number | null
+          product_name: string
+          projected_monthly_revenue_cents: number | null
+          revenue_cents: number | null
+          status: string
+          target_revenue_cents: number | null
+          updated_at: string
+          user_id: string
+          views: number | null
+        }
+        Insert: {
+          affiliate_links?: Json | null
+          affiliate_tag?: string | null
+          budget_cents?: number
+          campaign_name: string
+          clicks?: number | null
+          conversions?: number | null
+          created_at?: string
+          days_to_target?: number | null
+          id?: string
+          is_free?: boolean
+          platforms?: Json | null
+          probability_score?: number | null
+          product_name: string
+          projected_monthly_revenue_cents?: number | null
+          revenue_cents?: number | null
+          status?: string
+          target_revenue_cents?: number | null
+          updated_at?: string
+          user_id: string
+          views?: number | null
+        }
+        Update: {
+          affiliate_links?: Json | null
+          affiliate_tag?: string | null
+          budget_cents?: number
+          campaign_name?: string
+          clicks?: number | null
+          conversions?: number | null
+          created_at?: string
+          days_to_target?: number | null
+          id?: string
+          is_free?: boolean
+          platforms?: Json | null
+          probability_score?: number | null
+          product_name?: string
+          projected_monthly_revenue_cents?: number | null
+          revenue_cents?: number | null
+          status?: string
+          target_revenue_cents?: number | null
+          updated_at?: string
+          user_id?: string
+          views?: number | null
+        }
+        Relationships: []
       }
       marketing_expenses: {
         Row: {
