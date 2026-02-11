@@ -420,6 +420,78 @@ export type Database = {
         }
         Relationships: []
       }
+      tool_repository: {
+        Row: {
+          api_spec: Json | null
+          blueprint: Json | null
+          created_at: string
+          data_dictionary: Json | null
+          db_migration_sql: string | null
+          db_schema: string | null
+          event_name: string | null
+          generation_duration_ms: number | null
+          id: string
+          implemented_at: string | null
+          is_implemented: boolean
+          master_prompt: string | null
+          model_used: string | null
+          project_plan: Json | null
+          readme: string | null
+          roadmap: Json | null
+          source_code: string | null
+          status: string
+          tool_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          api_spec?: Json | null
+          blueprint?: Json | null
+          created_at?: string
+          data_dictionary?: Json | null
+          db_migration_sql?: string | null
+          db_schema?: string | null
+          event_name?: string | null
+          generation_duration_ms?: number | null
+          id?: string
+          implemented_at?: string | null
+          is_implemented?: boolean
+          master_prompt?: string | null
+          model_used?: string | null
+          project_plan?: Json | null
+          readme?: string | null
+          roadmap?: Json | null
+          source_code?: string | null
+          status?: string
+          tool_name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          api_spec?: Json | null
+          blueprint?: Json | null
+          created_at?: string
+          data_dictionary?: Json | null
+          db_migration_sql?: string | null
+          db_schema?: string | null
+          event_name?: string | null
+          generation_duration_ms?: number | null
+          id?: string
+          implemented_at?: string | null
+          is_implemented?: boolean
+          master_prompt?: string | null
+          model_used?: string | null
+          project_plan?: Json | null
+          readme?: string | null
+          roadmap?: Json | null
+          source_code?: string | null
+          status?: string
+          tool_name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_credits: {
         Row: {
           created_at: string
