@@ -13,6 +13,7 @@ import MarketingDashboard from "./pages/MarketingDashboard";
 import Auth from "./pages/Auth";
 import SavedAnalyses from "./pages/SavedAnalyses";
 import Premium from "./pages/Premium";
+import GeniusPool from "./pages/GeniusPool";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/saved" element={<SavedAnalyses />} />
               <Route path="/premium" element={<Premium />} />
+              <Route path="/genius-pool" element={<GeniusPool />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Layout>
