@@ -163,6 +163,7 @@ const PRESET_TOOLS = [
   { name: "UpEndToEndTesting", desc: "Generate & run comprehensive E2E test suites — user flows, edge cases, regression, Playwright scripts", category: "meta", cost: 3 },
   { name: "UpSOXCompliance", desc: "SOX compliance audit — access controls, audit trails, data integrity, change management, reporting", category: "meta", cost: 3 },
   { name: "UpAutoEvent", desc: "Auto-create ALL tools needed for any event/project — researches market, suggests novel tools, generates everything", category: "meta", cost: 3 },
+  { name: "UpRetry", desc: "Auto-retry failed/raw tools — cycles OpenRouter 3x then Gemini fallback, bulk retry_all for batch recovery", category: "meta", cost: 1 },
   { name: "UpSell", desc: "Instant revenue — fastest path to $100/day via affiliate, dropship, digital products, consulting", category: "fastmoney", cost: 2 },
 ];
 
