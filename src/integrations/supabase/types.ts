@@ -14,6 +14,160 @@ export type Database = {
   }
   public: {
     Tables: {
+      campaign_posts: {
+        Row: {
+          caption: string
+          created_at: string
+          engagement_clicks: number | null
+          engagement_comments: number | null
+          engagement_likes: number | null
+          engagement_shares: number | null
+          id: string
+          platform: string
+          posted_at: string | null
+          product_id: string
+          reach: number | null
+          scheduled_at: string | null
+          spend_cents: number | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          caption: string
+          created_at?: string
+          engagement_clicks?: number | null
+          engagement_comments?: number | null
+          engagement_likes?: number | null
+          engagement_shares?: number | null
+          id?: string
+          platform: string
+          posted_at?: string | null
+          product_id: string
+          reach?: number | null
+          scheduled_at?: string | null
+          spend_cents?: number | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          caption?: string
+          created_at?: string
+          engagement_clicks?: number | null
+          engagement_comments?: number | null
+          engagement_likes?: number | null
+          engagement_shares?: number | null
+          id?: string
+          platform?: string
+          posted_at?: string | null
+          product_id?: string
+          reach?: number | null
+          scheduled_at?: string | null
+          spend_cents?: number | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_posts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_expenses: {
+        Row: {
+          amount_cents: number
+          category: string
+          created_at: string
+          description: string
+          expense_date: string
+          id: string
+          product_id: string | null
+          receipt_url: string | null
+          tax_deductible: boolean | null
+          user_id: string
+        }
+        Insert: {
+          amount_cents: number
+          category?: string
+          created_at?: string
+          description: string
+          expense_date?: string
+          id?: string
+          product_id?: string | null
+          receipt_url?: string | null
+          tax_deductible?: boolean | null
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number
+          category?: string
+          created_at?: string
+          description?: string
+          expense_date?: string
+          id?: string
+          product_id?: string | null
+          receipt_url?: string | null
+          tax_deductible?: boolean | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_expenses_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_products: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          priority: number | null
+          product_name: string
+          product_type: string
+          score: number | null
+          status: string
+          target_county: string | null
+          target_state: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          priority?: number | null
+          product_name: string
+          product_type?: string
+          score?: number | null
+          status?: string
+          target_county?: string | null
+          target_state?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          priority?: number | null
+          product_name?: string
+          product_type?: string
+          score?: number | null
+          status?: string
+          target_county?: string | null
+          target_state?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
