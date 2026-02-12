@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.logo-generator]
 verify_jwt = false
+
+[functions.up-api]
+verify_jwt = false

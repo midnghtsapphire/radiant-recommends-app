@@ -22,13 +22,11 @@ const LOVABLE_MODELS = [
   { id: "google/gemini-2.5-pro", name: "Gemini 2.5 Pro" },
 ];
 
-const OPENROUTER_FREE_MODELS = [
-  { id: "openrouter/free", name: "Auto-Free (best available)" },
-  { id: "venice/uncensored:free", name: "Venice Uncensored 24B" },
-  { id: "arcee-ai/trinity-large-preview:free", name: "Arcee Trinity 400B" },
-  { id: "openai/gpt-oss-120b:free", name: "GPT-OSS 120B" },
-  { id: "tngtech/deepseek-r1t2-chimera:free", name: "DeepSeek R1T2 Chimera" },
-  { id: "z-ai/glm-4.5-air:free", name: "Z.ai GLM 4.5 Air" },
+const OPENROUTER_MODELS = [
+  { id: "nousresearch/hermes-3-llama-3.1-405b", name: "Kimo (Hermes 405B)" },
+  { id: "cognitivecomputations/dolphin-llama-3.1-8b", name: "Dolphin 8B" },
+  { id: "mistralai/mistral-large-latest", name: "Mistral Large" },
+  { id: "qwen/qwen-2.5-72b-instruct", name: "Qwen 2.5 72B" },
 ];
 
 const AI_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/marketing-ai`;
@@ -50,7 +48,7 @@ export default function AiToolsTab({ products }: AiToolsProps) {
   // Score form
   const [scoreProduct, setScoreProduct] = useState("");
 
-  const models = provider === "lovable" ? LOVABLE_MODELS : OPENROUTER_FREE_MODELS;
+  const models = provider === "lovable" ? LOVABLE_MODELS : OPENROUTER_MODELS;
 
   async function runAi() {
     setLoading(true);
@@ -125,7 +123,7 @@ export default function AiToolsTab({ products }: AiToolsProps) {
           </Select>
 
           {/* Provider */}
-          <Select value={provider} onValueChange={(v: any) => { setProvider(v); setModel(v === "lovable" ? "default" : "openrouter/free"); }}>
+          <Select value={provider} onValueChange={(v: any) => { setProvider(v); setModel(v === "lovable" ? "default" : "nousresearch/hermes-3-llama-3.1-405b"); }}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="lovable">Lovable AI (built-in)</SelectItem>
@@ -230,7 +228,7 @@ export default function AiToolsTab({ products }: AiToolsProps) {
           <p>🔧 <strong>MCP Server:</strong> <code>marketing-mcp</code> edge function — reusable via MCP protocol in any compatible app (Cursor, Claude, etc.)</p>
           <p>📦 <strong>Social Scheduling:</strong> <a href="https://github.com/gitroomhq/postiz-app" target="_blank" rel="noopener" className="text-primary underline">Postiz</a> (AGPL-3.0) — self-hosted social scheduler with API for n8n/Zapier integration</p>
           <p>📦 <strong>Alt Schedulers:</strong> <a href="https://github.com/inovector/mixpost" target="_blank" rel="noopener" className="text-primary underline">Mixpost</a>, <a href="https://github.com/nickatnight/opensmm" target="_blank" rel="noopener" className="text-primary underline">OpenSMM</a>, <a href="https://github.com/nickatnight/socioboard" target="_blank" rel="noopener" className="text-primary underline">Socioboard</a></p>
-          <p>🤖 <strong>Free AI:</strong> Lovable AI (Gemini 3, GPT-5) + OpenRouter free tier (Venice Uncensored, Trinity 400B, DeepSeek R1T2, GPT-OSS 120B)</p>
+          <p>🤖 <strong>AI Models:</strong> Lovable AI (Gemini 3, GPT-5) + OpenRouter (Kimo 405B, Dolphin 8B, Mistral Large, Qwen 72B)</p>
           <p>🔗 <strong>Protocol:</strong> Built on <a href="https://github.com/fiberplane/mcp-lite" target="_blank" rel="noopener" className="text-primary underline">mcp-lite</a> (MIT) for Model Context Protocol compatibility</p>
         </div>
       </div>
