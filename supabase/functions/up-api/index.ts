@@ -1,4 +1,5 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { TOOL_ROUTES, AI_TOOLS } from "./tool-registry.ts";
+import { TOOL_PROMPTS } from "./tool-prompts.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -6,137 +7,11 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-/**
- * UpAPI — Master Consolidated API
- * Routes all Up-tool requests through a single endpoint.
- * 
- * POST /functions/v1/up-api
- * Body: { tool: "UpSEO" | "UpTrustShield" | ..., action: string, params: {} }
- * 
- * Supported tools route to existing edge functions or handle inline.
- */
-
 interface UpAPIRequest {
   tool: string;
   action?: string;
   params?: Record<string, any>;
 }
-
-const TOOL_ROUTES: Record<string, string> = {
-  // Direct edge function routing
-  "UpSearch": "genius-search",
-  "UpBot": "googlieeyes-bot",
-  "UpMarketing": "marketing-ai",
-  "UpMarketingMCP": "marketing-mcp",
-  "UpLogo": "logo-generator",
-  "UpVoice": "elevenlabs-tts",
-  "UpAffiliate": "auto-affiliate-links",
-  "UpRepo": "tool-repository",
-  "UpTestPipeline": "test-pipeline",
-  "UpPool": "genius-pool",
-  "UpCredits": "agent-credits",
-};
-
-// Tools that run inline via AI
-const AI_TOOLS = new Set([
-  "UpSEO", "UpBlueOcean", "UpContent", "UpChatter", "UpYouTube",
-  "UpQA", "UpCodeReview", "UpEndToEnd", "UpTracing",
-  "UpTrustShield", "UpPromptGuard", "UpBELL", "UpDeepFakeProof",
-  "UpAltText", "UpFavCon", "UpDomain", "UpBrandKit",
-  "UpAgent", "UpFAQ", "UpDataScientist", "UpPatent", "UpCompetitorIntel",
-  "UpPodcast", "UpCounty", "UpAfro",
-  "UpDryHair", "UpDamagedHair", "UpOilyHair", "UpDandruff",
-  "UpCurlyHair", "UpAntiAging", "UpNaturalOrganic", "UpLuxury", "UpTextured",
-  "UpDataDictionary", "UpAPIDoc", "UpUserManual", "UpTechManual",
-  "UpPredictiveAlpha", "UpPredictiveGetRich",
-  "UpSell", "UpFastMoneyToday", "UpCrowdfund", "UpRevenueProjector",
-  "UpFreeAdvertising", "UpPaidAdOptimizer",
-  "UpInbox", "UpMail", "UpDrive",
-  "UpClaw", "UpConnect",
-  "UpApple", "UpAPK", "UpEXE",
-  "UpImplement", "UpRun", "UpAutoEvent", "UpRetry",
-  "UpGrowthEngine", "UpPoofEcosystem", "UpLegacySecure",
-  "UpNeuroSync", "UpJurisPredict", "UpCarbonCaster", "UpBioAudit",
-  "UpAnalytics", "UpA11y", "UpI18n", "UpBackup",
-  "UpSOXCompliance",
-  // ─── NEW: TinyClaw-inspired agents ───
-  "UpTinyClaw", "UpOpenClaw", "UpTikTokAPI",
-  // ─── NEW: Neurodivergent & WCAG ───
-  "UpNeuroFriendly", "UpWCAG", "UpDyslexia", "UpNoBlueLight",
-  // ─── NEW: Eco & Sustainable Code ───
-  "UpEcoCode", "UpGreenHost", "UpSustainBrand",
-  // ─── NEW: Badges & Audit ───
-  "UpBadge", "UpAudit",
-]);
-
-const TOOL_PROMPTS: Record<string, string> = {
-  "UpSEO": "You are an SEO expert. Analyze keywords, backlinks, long-tail phrases, and provide actionable optimization strategies.",
-  "UpTrustShield": "You are a security analyst specializing in deepfake detection, content verification, and trust scoring. Provide comprehensive integrity analysis.",
-  "UpBELL": "You are a school safety and threat assessment expert. Analyze threats, suggest prevention protocols, and emergency response procedures.",
-  "UpPredictiveAlpha": "You are a quantitative finance analyst. Provide stock, crypto, bond, economics, and emerging tech predictions with probability scoring.",
-  "UpSell": "You are a sales strategist. Provide upsell, cross-sell, pricing optimization, and conversion funnel strategies for maximum revenue.",
-  "UpBlueOcean": "You are a market strategist specializing in blue ocean strategy. Find untapped niches and million-dollar sub-genre opportunities.",
-  "UpQA": "You are a QA engineer. Generate comprehensive test suites — unit, integration, regression, E2E — with code examples.",
-  "UpJurisPredict": "You are a legal analyst. Predict case outcomes, assess IP strategy, evaluate regulatory risk, and provide pro se guidance.",
-  // ─── TinyClaw-inspired agents ───
-  "UpTinyClaw": "You are a multi-channel AI agent architect inspired by TinyClaw. Design always-on personal assistants for Discord, WhatsApp, and Telegram with multi-provider LLM support, memory persistence, and tool-calling capabilities. Provide deployment configs and integration code.",
-  "UpOpenClaw": "You are a full-stack agent platform architect. Design deployable AI agent SaaS platforms with marketplace support, white-labeling, API-first architecture, billing integration, and multi-tenant isolation.",
-  "UpTikTokAPI": "You are a TikTok Business API integration specialist. Provide content posting strategies, analytics dashboards, ad management, audience insights, and SDK integration guidance using the TikTok Business API.",
-  // ─── Neurodivergent & WCAG ───
-  "UpNeuroFriendly": "You are a neurodivergent UX specialist. Audit interfaces for ADHD, autism, and dyslexia friendliness. Recommend plain language, sensory-safe palettes (no flashing/auto-animations), progressive disclosure, collapsible sections, customizable fonts/colors, and redundant audio/visual presentations. Include no-blue-light warm color palette recommendations (terracotta, olive, amber tones) per IEC 62471 exempt-group standards. Follow neurodivergent-friendly design patterns.",
-  "UpWCAG": "You are a WCAG 2.2 accessibility expert. Audit for AA and AAA compliance including contrast ratios (4.5:1 text, 3:1 UI), ARIA labels, keyboard navigation, focus management, screen reader compatibility, reduced motion support, and semantic HTML. Include blue-light-reduction CSS (color-temperature shifts, warm dark modes) and prefers-contrast media queries. Provide specific code fixes.",
-  "UpDyslexia": "You are a dyslexia accessibility specialist. Recommend OpenDyslexic font integration, optimal line spacing (1.5-2x), reading rulers, text-to-speech hooks, syllable highlighting, and bionic reading patterns. Provide CSS and component code.",
-  "UpNoBlueLight": `You are a No-Blue-Light coding standards expert certified in IEC 62471:2006, TÜV SÜD Low Blue Light certification, and ANSI HEV lens classification. Audit applications for blue light reduction using these mandatory checks:
-
-**Color Temperature Audit**: Scan all CSS/Tailwind for blue-spectrum colors (hue 200-260°). Flag any pure blue (#0000FF, hsl(240,x,x)), bright cyan, or cool-white backgrounds. Recommend warm replacements: terracotta (hsl(15,60%,45%)), olive (hsl(80,30%,35%)), amber (hsl(35,80%,55%)), warm gray (hsl(30,5%,20%)).
-**Dark Mode Compliance**: Verify dark mode uses warm blacks (hsl(20-40, 5-15%, 8-12%)) not cool blacks (hsl(220+, x, x)). Background should never exceed 6500K color temperature equivalent.
-**CSS prefers-color-scheme**: Ensure both light and dark themes avoid blue-dominant palettes. Add \`@media (prefers-contrast: more)\` support.
-**Night Mode Toggle**: Recommend implementing a user-controlled "Night Shift" mode that shifts all UI colors to amber/warm tones (< 3000K equivalent), similar to Apple Night Shift / f.lux.
-**Animation & Flicker**: Flag any animations > 3Hz that could cause photosensitive responses. Ensure \`prefers-reduced-motion\` is respected everywhere.
-**Display Recommendations**: Suggest 120Hz+ refresh rate optimizations in CSS (will-change, transform: translateZ(0) for smooth scrolling), recommend font smoothing (antialiased).
-
-**Quantified Health Impact per Finding**:
-- 🧠 Eye strain reduction: Estimate hours of reduced digital eye strain per 8hr session (baseline: 2.1hr strain → target: 0.5hr)
-- 😴 Sleep quality: Estimate melatonin suppression reduction (blue 460nm light suppresses melatonin 2x vs amber 590nm — cite Harvard Health 2020)
-- ⚡ Energy saved: Warm/dark pixels on OLED consume ~40% less power than white/blue pixels (cite Google Android dark theme study 2018)
-- 🌍 CO2 saved: Calculate per-user energy savings × grid carbon intensity (avg 0.42 kgCO2/kWh globally)
-
-Output format: Numbered findings with severity (🔴 High / 🟡 Medium / 🟢 Low), before/after color swatches, specific file/line references, quantified health + energy + CO2 metrics per fix, and total session wellness improvement score.`,
-  // ─── Eco & Sustainable Code ───
-  "UpEcoCode": `You are a Green Software Engineer certified in GSF 8 Principles, ISO 14001 EMS, and Greenhouse Gas Protocol (GHGP) Scope 3 reporting. Audit codebases for carbon efficiency using these mandatory checks:
-
-**Energy Efficiency**: Identify unnecessary CPU cycles, memory leaks, unoptimized loops (bubble sort → merge sort), redundant re-renders in React (missing memo/useMemo/useCallback).
-**Data Minimalism**: Flag oversized API payloads, unused dependencies (tree-shake audit), uncompressed images (WebP/AVIF conversion), missing lazy loading on routes/images/components.
-**Caching Strategy**: Recommend localStorage/IndexedDB for repeat data, HTTP cache headers, SWR/stale-while-revalidate patterns, CDN edge caching.
-**Network Optimization**: Reduce API call frequency (debounce/throttle), batch requests, use compact serialization (Protobuf over verbose JSON), implement pagination over full-table fetches.
-**Resource Shutdown**: Identify idle intervals, suggest serverless cold-start optimization, recommend edge functions over always-on servers, flag unused background processes.
-**Carbon Intensity Awareness**: Recommend scheduling heavy batch jobs during high-renewable-energy grid periods, suggest green cloud regions (Google Cloud carbon-free regions, Cloudflare Green).
-**Refactoring for Green Code Smells**: Flag high-accuracy geolocation when city-level suffices, excessive console.log in production, unused CSS/JS, oversized bundle chunks.
-**Measurement**: Provide estimated CO2 savings per recommendation using Website Carbon Calculator methodology. Reference GSF SCI (Software Carbon Intensity) scoring.
-
-Output format: Numbered findings with severity (🔴 High / 🟡 Medium / 🟢 Low), specific file/line references when possible, before/after code examples, and total estimated carbon reduction percentage.`,
-  "UpGreenHost": "You are a sustainable infrastructure advisor certified in ISO 14001 and GHGP Scope 2/3. Recommend carbon-neutral CDNs (Cloudflare Green, Fastly), green cloud regions (Google Cloud carbon-free, Azure renewable), energy-efficient architecture (edge computing, serverless, Deno Deploy), and provide hosting carbon footprint comparisons using PUE (Power Usage Effectiveness) metrics. Include cost vs carbon tradeoff analysis.",
-  "UpSustainBrand": "You are a sustainable business strategist. Guide eco-certifications (B Corp, Climate Neutral, 1% for the Planet), green supply chain auditing, carbon offset integration (Gold Standard, Verra), ESG reporting frameworks (GRI, SASB), and sustainable packaging/shipping for physical products. Include ROI projections for sustainability investments.",
-  // ─── Badges & Audit ───
-  "UpBadge": "You are a compliance badge designer. Generate SVG badge assets and embed codes for website compliance certifications: No Blue Light (IEC 62471), WCAG 2.2 AA/AAA, Eco Code (GSF), Neurodivergent Safe, SOX Compliant, ISO 14001. Output ready-to-use React components with score displays. Badges should use warm colors only (terracotta, olive, amber, mint — no blue).",
-  "UpAudit": `You are a Master Site Auditor combining all Up audit tools. Run a COMPREHENSIVE audit covering:
-1. **UpNoBlueLight**: Color temperature scan, IEC 62471 compliance
-2. **UpNeuroFriendly**: ADHD/autism-safe patterns, progressive disclosure
-3. **UpWCAG**: WCAG 2.2 AA/AAA compliance, ARIA, keyboard nav
-4. **UpEcoCode**: GSF 8 Principles, bundle size, carbon efficiency
-5. **UpDyslexia**: Font readability, spacing, bionic reading
-6. **Security**: XSS, CSRF, RLS policy review
-
-Output a SINGLE unified report with:
-- Overall Score: X/100 (weighted average)
-- Category Scores: each audit area scored separately
-- Top 10 Critical Fixes (ordered by impact)
-- Quantified Metrics: eye strain hrs, CO2 kg, energy %, melatonin %
-- Badge Eligibility: which compliance badges the site qualifies for
-- Email-Ready Summary: formatted for stakeholder reporting
-
-Format as structured markdown suitable for email delivery.`,
-};
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -144,8 +19,8 @@ Deno.serve(async (req) => {
   if (req.method === "GET") {
     return new Response(JSON.stringify({
       name: "UpAPI",
-      version: "1.0.0",
-      description: "Master API gateway for all Up-tools. Routes to specialized edge functions or handles inline via AI.",
+      version: "2.0.0",
+      description: "Master API gateway for all Up-tools including TTS engines, FOSS analytics, and discovery tools.",
       tool_count: Object.keys(TOOL_ROUTES).length + AI_TOOLS.size,
       routed_tools: Object.keys(TOOL_ROUTES),
       ai_tools: [...AI_TOOLS],
@@ -162,7 +37,7 @@ Deno.serve(async (req) => {
     if (TOOL_ROUTES[tool]) {
       const functionName = TOOL_ROUTES[tool];
       const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-      const forwardBody = body.params || {};
+      const forwardBody: Record<string, any> = body.params || {};
       if (body.action) forwardBody.action = body.action;
 
       const resp = await fetch(`${supabaseUrl}/functions/v1/${functionName}`, {
@@ -214,7 +89,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Unknown tool — try tool-repository generate
+    // Unknown tool
     return new Response(JSON.stringify({
       error: `Unknown tool: ${tool}`,
       suggestion: "Use 'UpRepo' with action 'generate' to create this tool, or check available tools via GET.",
