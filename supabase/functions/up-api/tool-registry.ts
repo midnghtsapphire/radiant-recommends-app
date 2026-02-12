@@ -63,4 +63,8 @@ export const AI_TOOLS = new Set([
   "UpUmami", "UpPlausible", "UpMatomo", "UpClickHouse", "UpAnalyticsHub",
   // ─── NEW: FOSS Discovery ───
   "UpFOSS", "UpFOSSAudit",
+  // ─── NEW: Google APIs ───
+  "UpYouTubeData", "UpGoogleAnalytics", "UpSearchConsole", "UpGoogleSuite",
+  // ─── NEW: Infrastructure ───
+  "UpDigitalOcean",
 ]);
