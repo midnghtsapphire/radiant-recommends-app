@@ -142,6 +142,9 @@ const PRESET_TOOLS = [
   { name: "UpEcoCode", desc: "Green coding audit — reduce bundle size, optimize API calls, minimize carbon footprint, sustainable hosting recommendations", category: "eco", cost: 2 },
   { name: "UpGreenHost", desc: "Eco-hosting advisor — carbon-neutral CDNs, green cloud providers, energy-efficient architecture patterns", category: "eco", cost: 1 },
   { name: "UpSustainBrand", desc: "Sustainable branding — eco-certifications, green supply chain, carbon offset integration, ESG reporting", category: "eco", cost: 2 },
+  // ─── Badges & Audit ───
+  { name: "UpBadge", desc: "Compliance badge generator — SVG badges for No Blue Light, WCAG, Eco Code, Neurodivergent Safe certifications", category: "meta", cost: 1 },
+  { name: "UpAudit", desc: "Master site auditor — runs all compliance audits (blue light, WCAG, eco, neuro, security), scores site, emails report to stakeholders", category: "meta", cost: 3 },
 ];
 
 const HAIR_CATEGORIES = [

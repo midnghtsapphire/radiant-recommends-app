@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { FlaskConical, Sparkles, ListChecks, Megaphone, Flower2 } from "lucide-react";
+import { FlaskConical, Sparkles, ListChecks, Megaphone, Flower2, Shield, Leaf, Eye, Brain } from "lucide-react";
 import heroImage from "@/assets/hero-hair.jpg";
 
 const features = [
@@ -61,9 +61,29 @@ export default function Index() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/30 bg-primary/5 mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/30 bg-primary/5 mb-4">
               <Flower2 className="h-4 w-4 text-blossom" />
               <span className="text-sm text-muted-foreground">AI Cosmetic Chemistry</span>
+            </div>
+
+            {/* Compliance Badges */}
+            <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-primary/20 bg-primary/5 text-xs font-medium text-primary">
+                <Eye className="h-3 w-3" />
+                No Blue Light 94/100
+              </div>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-olive/30 bg-secondary/20 text-xs font-medium text-secondary-foreground">
+                <Leaf className="h-3 w-3" />
+                Eco Code
+              </div>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-blossom/20 bg-accent/10 text-xs font-medium text-accent">
+                <Brain className="h-3 w-3" />
+                Neurodivergent Safe
+              </div>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-mint/30 bg-mint/10 text-xs font-medium text-mint">
+                <Shield className="h-3 w-3" />
+                WCAG 2.2 AA
+              </div>
             </div>
 
             <h1 className="font-display text-5xl md:text-7xl font-light tracking-tight leading-tight mb-6">
