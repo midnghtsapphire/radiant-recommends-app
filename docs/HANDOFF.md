@@ -26,6 +26,9 @@
 | `STRIPE_SECRET_KEY` | Stripe payments | Auto-provisioned |
 | `GOOGLE_AI_API_KEY` | Google Gemini fallback (user's own key) | User-provided |
 | `DIGITALOCEAN_API_KEY` | DigitalOcean infrastructure management | User-provided |
+| `YOUTUBE_API_KEY` | YouTube Data API v3 | User-provided |
+| `GOOGLE_ANALYTICS_API_KEY` | Google Analytics GA4 Data API | User-provided |
+| `GOOGLE_SEARCH_CONSOLE_API_KEY` | Google Search Console API | User-provided |
 
 ---
 
