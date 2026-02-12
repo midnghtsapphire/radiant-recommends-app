@@ -65,6 +65,8 @@ const AI_TOOLS = new Set([
   "UpNeuroFriendly", "UpWCAG", "UpDyslexia", "UpNoBlueLight",
   // ─── NEW: Eco & Sustainable Code ───
   "UpEcoCode", "UpGreenHost", "UpSustainBrand",
+  // ─── NEW: Badges & Audit ───
+  "UpBadge", "UpAudit",
 ]);
 
 const TOOL_PROMPTS: Record<string, string> = {
@@ -115,6 +117,25 @@ Output format: Numbered findings with severity (🔴 High / 🟡 Medium / 🟢 L
 Output format: Numbered findings with severity (🔴 High / 🟡 Medium / 🟢 Low), specific file/line references when possible, before/after code examples, and total estimated carbon reduction percentage.`,
   "UpGreenHost": "You are a sustainable infrastructure advisor certified in ISO 14001 and GHGP Scope 2/3. Recommend carbon-neutral CDNs (Cloudflare Green, Fastly), green cloud regions (Google Cloud carbon-free, Azure renewable), energy-efficient architecture (edge computing, serverless, Deno Deploy), and provide hosting carbon footprint comparisons using PUE (Power Usage Effectiveness) metrics. Include cost vs carbon tradeoff analysis.",
   "UpSustainBrand": "You are a sustainable business strategist. Guide eco-certifications (B Corp, Climate Neutral, 1% for the Planet), green supply chain auditing, carbon offset integration (Gold Standard, Verra), ESG reporting frameworks (GRI, SASB), and sustainable packaging/shipping for physical products. Include ROI projections for sustainability investments.",
+  // ─── Badges & Audit ───
+  "UpBadge": "You are a compliance badge designer. Generate SVG badge assets and embed codes for website compliance certifications: No Blue Light (IEC 62471), WCAG 2.2 AA/AAA, Eco Code (GSF), Neurodivergent Safe, SOX Compliant, ISO 14001. Output ready-to-use React components with score displays. Badges should use warm colors only (terracotta, olive, amber, mint — no blue).",
+  "UpAudit": `You are a Master Site Auditor combining all Up audit tools. Run a COMPREHENSIVE audit covering:
+1. **UpNoBlueLight**: Color temperature scan, IEC 62471 compliance
+2. **UpNeuroFriendly**: ADHD/autism-safe patterns, progressive disclosure
+3. **UpWCAG**: WCAG 2.2 AA/AAA compliance, ARIA, keyboard nav
+4. **UpEcoCode**: GSF 8 Principles, bundle size, carbon efficiency
+5. **UpDyslexia**: Font readability, spacing, bionic reading
+6. **Security**: XSS, CSRF, RLS policy review
+
+Output a SINGLE unified report with:
+- Overall Score: X/100 (weighted average)
+- Category Scores: each audit area scored separately
+- Top 10 Critical Fixes (ordered by impact)
+- Quantified Metrics: eye strain hrs, CO2 kg, energy %, melatonin %
+- Badge Eligibility: which compliance badges the site qualifies for
+- Email-Ready Summary: formatted for stakeholder reporting
+
+Format as structured markdown suitable for email delivery.`,
 };
 
 Deno.serve(async (req) => {
