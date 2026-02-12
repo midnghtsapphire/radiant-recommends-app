@@ -129,6 +129,18 @@ const PRESET_TOOLS = [
   { name: "UpBackup", desc: "Database backup — automated snapshots, encrypted storage, point-in-time recovery, disaster recovery", category: "consolidated", cost: 2 },
   // ─── Test Pipeline ───
   { name: "UpTestPipeline", desc: "Auto-test all UpTools — connectivity, AI response, DB persistence, OpenRouter validation", category: "test", cost: 1 },
+  // ─── Agent Creators (TinyClaw-inspired) ───
+  { name: "UpTinyClaw", desc: "Tiny 24/7 AI agent — multi-channel (Discord, WhatsApp, Telegram), multi-provider, always-on personal assistant", category: "agent", cost: 3 },
+  { name: "UpOpenClaw", desc: "Full agent platform — deploy custom AI agents as SaaS, marketplace, white-label, API-first architecture", category: "agent", cost: 3 },
+  { name: "UpTikTokAPI", desc: "TikTok Business API integration — content posting, analytics, ad management, audience insights", category: "revenue", cost: 2 },
+  // ─── Neurodivergent & Accessibility ───
+  { name: "UpNeuroFriendly", desc: "Neurodivergent-friendly UI audit — plain language, sensory-safe colors, no flashing, progressive disclosure, ADHD/autism patterns", category: "accessibility", cost: 2 },
+  { name: "UpWCAG", desc: "WCAG 2.2 AA/AAA compliance — contrast ratios, ARIA labels, keyboard nav, screen reader testing, focus management", category: "accessibility", cost: 2 },
+  { name: "UpDyslexia", desc: "Dyslexia-friendly formatting — OpenDyslexic font option, line spacing, reading ruler, text-to-speech integration", category: "accessibility", cost: 1 },
+  // ─── Eco & Sustainable Code ───
+  { name: "UpEcoCode", desc: "Green coding audit — reduce bundle size, optimize API calls, minimize carbon footprint, sustainable hosting recommendations", category: "eco", cost: 2 },
+  { name: "UpGreenHost", desc: "Eco-hosting advisor — carbon-neutral CDNs, green cloud providers, energy-efficient architecture patterns", category: "eco", cost: 1 },
+  { name: "UpSustainBrand", desc: "Sustainable branding — eco-certifications, green supply chain, carbon offset integration, ESG reporting", category: "eco", cost: 2 },
 ];
 
 const HAIR_CATEGORIES = [
@@ -158,6 +170,8 @@ const CATEGORY_LABELS: Record<string, string> = {
   agent: "🤖 Agents & Connections",
   deploy: "📲 Deployment & App Stores",
   meta: "⚡ Orchestration & Meta-Tools",
+  accessibility: "♿ Neurodivergent & WCAG",
+  eco: "🌱 Eco & Sustainable Code",
 };
 
 export default function GeniusPool() {
