@@ -137,6 +137,7 @@ const PRESET_TOOLS = [
   { name: "UpNeuroFriendly", desc: "Neurodivergent-friendly UI audit — plain language, sensory-safe colors, no flashing, progressive disclosure, ADHD/autism patterns", category: "accessibility", cost: 2 },
   { name: "UpWCAG", desc: "WCAG 2.2 AA/AAA compliance — contrast ratios, ARIA labels, keyboard nav, screen reader testing, focus management", category: "accessibility", cost: 2 },
   { name: "UpDyslexia", desc: "Dyslexia-friendly formatting — OpenDyslexic font option, line spacing, reading ruler, text-to-speech integration", category: "accessibility", cost: 1 },
+  { name: "UpNoBlueLight", desc: "No-blue-light audit — warm color palettes, IEC 62471 compliance, night mode toggle, OLED energy savings, melatonin/sleep health metrics, CO2 quantification", category: "accessibility", cost: 2 },
   // ─── Eco & Sustainable Code ───
   { name: "UpEcoCode", desc: "Green coding audit — reduce bundle size, optimize API calls, minimize carbon footprint, sustainable hosting recommendations", category: "eco", cost: 2 },
   { name: "UpGreenHost", desc: "Eco-hosting advisor — carbon-neutral CDNs, green cloud providers, energy-efficient architecture patterns", category: "eco", cost: 1 },
