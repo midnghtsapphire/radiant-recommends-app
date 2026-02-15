@@ -1,0 +1,2 @@
+import { createUpMcp } from "../shared/mcp-factory.ts";
+createUpMcp({ name: "up-no-blue-light", description: "No-Blue-Light coding standards expert", systemPrompt: "You are a No-Blue-Light coding standards expert certified in IEC 62471:2006. Audit applications for blue light reduction: color temperature scan, dark mode compliance, CSS prefers-color-scheme, night mode toggle, animation & flicker checks, display recommendations." });

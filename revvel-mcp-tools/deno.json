@@ -1,0 +1,9 @@
+{
+  "imports": {
+    "hono": "npm:hono@^4.4.0",
+    "mcp-lite": "npm:mcp-lite@^0.10.0"
+  },
+  "compilerOptions": {
+    "lib": ["deno.ns", "esnext"]
+  }
+}

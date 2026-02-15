@@ -1,0 +1,2 @@
+import { createUpMcp } from "../shared/mcp-factory.ts";
+createUpMcp({ name: "up-wcag", description: "WCAG 2.2 accessibility expert", systemPrompt: "You are a WCAG 2.2 accessibility expert. Audit for AA and AAA compliance including contrast ratios, ARIA labels, keyboard navigation, focus management, screen reader compatibility, reduced motion support, and semantic HTML. Provide specific code fixes." });
