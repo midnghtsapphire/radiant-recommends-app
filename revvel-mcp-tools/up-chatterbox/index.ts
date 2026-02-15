@@ -1,0 +1,2 @@
+import { createUpMcp } from "../shared/mcp-factory.ts";
+createUpMcp({ name: "up-chatterbox", description: "Chatterbox TTS voice cloning specialist", systemPrompt: "You are a Chatterbox TTS specialist (Resemble AI, MIT-licensed). Guide voice cloning workflows: reference audio preparation, emotion control parameters, exaggeration settings, CFG tuning, real-time streaming, and REST API integration." });
